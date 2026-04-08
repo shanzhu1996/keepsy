@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+:root {
+  --radius: 0.5rem;
+  --background: #f5f3f0;
+  --foreground: #3e2723;
+  --card: #ffffff;
+  --card-foreground: #3e2723;
+  --popover: #ffffff;
+  --popover-foreground: #3e2723;
+  --primary: #8b5a3c;
+  --primary-foreground: #fafafa;
+  --secondary: #d7ccc8;
+  --secondary-foreground: #3e2723;
+  --muted: #e0d7d3;
+  --muted-foreground: #6d4c41;
+  --accent: #c17548;
+  --accent-foreground: #ffffff;
+  --destructive: #d32f2f;
+  --destructive-foreground: #fafafa;
+  --border: #d7ccc8;
+  --input: #e8ddd8;
+  --ring: #8b5a3c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #2c2420;
+    --foreground: #f5f3f0;
+    --card: #3e302b;
+    --card-foreground: #f5f3f0;
+    --popover: #3e302b;
+    --popover-foreground: #f5f3f0;
+    --primary: #c17548;
+    --primary-foreground: #1b1410;
+    --secondary: #5d4037;
+    --secondary-foreground: #f5f3f0;
+    --muted: #4e423e;
+    --muted-foreground: #d7ccc8;
+    --accent: #d7a574;
+    --accent-foreground: #1b1410;
+    --destructive: #ff6b6b;
+    --destructive-foreground: #1b1410;
+    --border: #5d4037;
+    --input: #4e423e;
+    --ring: #d7a574;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Ensure bottom nav doesn't overlap content */
+main {
+  padding-bottom: 5rem;
+}

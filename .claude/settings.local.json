@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(/Users/cocakoala/Desktop/keepsy/node_modules/.bin/tsc --noEmit)",
+      "Read(//usr/local/bin/**)",
+      "Read(//Users/cocakoala/.nvm/versions/**)",
+      "Read(//opt/homebrew/bin/**)",
+      "Read(//usr/local/Cellar/node/25.9.0_1/bin/**)",
+      "Read(//Users/cocakoala/.nodenv/shims/**)",
+      "Read(//Users/cocakoala/Library/pnpm/**)",
+      "Bash(/usr/local/opt/node/bin/node /usr/local/opt/node/bin/npm exec -- tsc --noEmit)",
+      "Bash(PATH=\"/usr/local/opt/node/bin:$PATH\" tsc --noEmit --project /Users/cocakoala/Desktop/keepsy/tsconfig.json)",
+      "Bash(PATH=\"/usr/local/opt/node/bin:$PATH\" /Users/cocakoala/Desktop/keepsy/node_modules/.bin/tsc --noEmit --project /Users/cocakoala/Desktop/keepsy/tsconfig.json)",
+      "Bash(ls /Users/cocakoala/Desktop/keepsy/app/\\\\\\(app\\\\\\)/settings/)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(ls /Users/cocakoala/Desktop/keepsy/.env*)",
+      "Bash(git init:*)",
+      "Bash(git remote:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}
