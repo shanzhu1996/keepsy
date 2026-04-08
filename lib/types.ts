@@ -1,4 +1,18 @@
 export type LessonStatus = "scheduled" | "completed" | "cancelled";
+export type NoteStatus = "not_started" | "draft" | "sent";
+
+export interface LessonReport {
+  covered: string[];
+  teacher_notes: string[];
+  assignments: string[];
+  next_lesson_plan: string[];
+  materials: string[];
+}
+
+export interface GeneratedNote {
+  student_message: string;
+  lesson_report: LessonReport;
+}
 export type PaymentStatus = "pending" | "paid";
 export type ContactMethod = "email" | "phone" | "sms";
 
@@ -31,6 +45,8 @@ export interface Lesson {
   raw_note: string | null;
   internal_summary: string | null;
   student_summary: string | null;
+  note_status?: NoteStatus | null;
+  student_summary_sent_at?: string | null;
   recurrence_rule: string | null;
   recurrence_group_id: string | null;
   completed_at: string | null;

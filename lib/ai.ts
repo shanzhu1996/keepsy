@@ -1,8 +1,73 @@
 import OpenAI from "openai";
+import type { GeneratedNote } from "@/lib/types";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+export async function generateFromTranscript(
+  transcript: string,
+  studentName: string,
+  language: string = "English"
+): Promise<GeneratedNote> {
+  const firstName = studentName.split(" ")[0] || studentName;
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      {
+        role: "system",
+        content: `You are an assistant for a private music teacher. The teacher just finished a lesson with ${firstName} and spoke (or typed) freely about what happened. Write BOTH outputs in ${language}. From that input, produce TWO outputs:
+
+1. "student_message" — a short, warm, encouraging message addressed directly to ${firstName} (or their parent). 2-3 sentences, friendly tone, ready to send as a text. No bullet points. Do not sign off with a name.
+
+2. "lesson_report" — a structured teacher report with five sections. Each section is an ARRAY of concise bullet strings. Keep it clean and professional, no fluff. Each section should have at most 1–3 bullets. Use empty arrays when a section doesn't apply — never invent content.
+   - "covered": key topics, pieces, or techniques worked on this lesson.
+   - "teacher_notes": observations, issues, or progress notes (internal).
+   - "assignments": clear practice tasks for before next lesson. Each ≤12 words.
+   - "next_lesson_plan": what to focus on next time.
+   - "materials": resources, links, or references mentioned (optional; empty array if none).
+
+Do not invent details. If the input is very short, keep the outputs short too.
+
+Respond in strict JSON:
+{
+  "student_message": "...",
+  "lesson_report": {
+    "covered": ["..."],
+    "teacher_notes": ["..."],
+    "assignments": ["..."],
+    "next_lesson_plan": ["..."],
+    "materials": ["..."]
+  }
+}`,
+      },
+      { role: "user", content: transcript },
+    ],
+    response_format: { type: "json_object" },
+    temperature: 0.6,
+    max_tokens: 900,
+  });
+
+  const content = response.choices[0]?.message?.content;
+  if (!content) throw new Error("No response from OpenAI");
+  const parsed = JSON.parse(content);
+  const toStringArray = (x: unknown): string[] =>
+    Array.isArray(x)
+      ? x.filter((v): v is string => typeof v === "string" && v.trim().length > 0)
+      : [];
+  const report = (parsed.lesson_report ?? {}) as Record<string, unknown>;
+  return {
+    student_message:
+      typeof parsed.student_message === "string" ? parsed.student_message : "",
+    lesson_report: {
+      covered: toStringArray(report.covered),
+      teacher_notes: toStringArray(report.teacher_notes),
+      assignments: toStringArray(report.assignments),
+      next_lesson_plan: toStringArray(report.next_lesson_plan),
+      materials: toStringArray(report.materials),
+    },
+  };
+}
 
 export async function generateLessonSummaries(
   rawNote: string,
