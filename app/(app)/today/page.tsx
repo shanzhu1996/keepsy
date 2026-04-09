@@ -28,7 +28,6 @@ import type { Lesson, Student } from "@/lib/types";
 export default function TodayPage() {
   const supabase = createClient();
   const [upcomingLessons, setUpcomingLessons] = useState<Lesson[]>([]);
-  const [pastLessons, setPastLessons] = useState<Lesson[]>([]);
   const [allFutureLessons, setAllFutureLessons] = useState<Lesson[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [showNewLesson, setShowNewLesson] = useState(false);
@@ -37,7 +36,7 @@ export default function TodayPage() {
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split("T")[0]
   );
-  const [showPast, setShowPast] = useState(false);
+  const [showFinished, setShowFinished] = useState(true);
   const [calendarView, setCalendarView] = useState<"day" | "week">("week");
 
   // New lesson form state
@@ -61,24 +60,13 @@ export default function TodayPage() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Past: last 14 days of lessons
-    const twoWeeksAgo = new Date(today);
-    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-
-    const [upcomingRes, pastRes, studentsRes] = await Promise.all([
+    const [upcomingRes, studentsRes] = await Promise.all([
       supabase
         .from("lessons")
         .select("*, student:students(*)")
         .gte("scheduled_at", today.toISOString())
         .order("scheduled_at", { ascending: true })
         .limit(100),
-      supabase
-        .from("lessons")
-        .select("*, student:students(*)")
-        .gte("scheduled_at", twoWeeksAgo.toISOString())
-        .lt("scheduled_at", today.toISOString())
-        .order("scheduled_at", { ascending: false })
-        .limit(20),
       supabase
         .from("students")
         .select("*")
@@ -87,7 +75,6 @@ export default function TodayPage() {
     ]);
 
     setUpcomingLessons(upcomingRes.data ?? []);
-    setPastLessons(pastRes.data ?? []);
     setAllFutureLessons(upcomingRes.data ?? []);
     setStudents(studentsRes.data ?? []);
     setLoading(false);
@@ -163,9 +150,20 @@ export default function TodayPage() {
       (l) =>
         new Date(l.scheduled_at).toDateString() === new Date().toDateString()
     )
-    .sort((a, b) =>
-      new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()
-    );
+    .sort((a, b) => {
+      // Finished lessons sink to the bottom; active (upcoming + in_progress)
+      // stay at the top. Within each group, sort by scheduled time.
+      const now = Date.now();
+      const endOf = (l: typeof a) =>
+        new Date(l.scheduled_at).getTime() + (l.duration_min ?? 60) * 60_000;
+      const aFinished = endOf(a) <= now ? 1 : 0;
+      const bFinished = endOf(b) <= now ? 1 : 0;
+      if (aFinished !== bFinished) return aFinished - bFinished;
+      return (
+        new Date(a.scheduled_at).getTime() -
+        new Date(b.scheduled_at).getTime()
+      );
+    });
 
   const selectedDateLessons = upcomingLessons
     .filter((l) => l.scheduled_at.split("T")[0] === selectedDate)
@@ -179,11 +177,25 @@ export default function TodayPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">
-          Lessons{refreshing && <span className="ml-2 text-sm font-normal text-gray-400">Saving…</span>}
-        </h1>
-        <Button size="sm" onClick={() => setShowNewLesson(true)}>
+      <div className="flex justify-between items-start mb-6">
+        <div>
+          <h1 style={{ fontSize: "28px", fontWeight: 600, letterSpacing: "-0.015em", color: "var(--ink-primary)", lineHeight: "32px" }}>
+            Today{refreshing && <span className="ml-2 text-sm font-normal text-gray-400">Saving…</span>}
+          </h1>
+          <p style={{ fontSize: "13px", color: "var(--ink-tertiary)", marginTop: "2px" }}>
+            {new Date().toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })}
+          </p>
+        </div>
+        <Button
+          size="sm"
+          onClick={() => setShowNewLesson(true)}
+          style={{
+            backgroundColor: "var(--accent-soft)",
+            color: "var(--accent-ink)",
+            boxShadow: "none",
+            border: "1px solid rgba(165, 82, 42, 0.14)",
+          }}
+        >
           + New
         </Button>
       </div>
@@ -194,7 +206,7 @@ export default function TodayPage() {
             Today ({todayLessons.length})
           </TabsTrigger>
           <TabsTrigger value="calendar" className="flex-1">
-            Calendar
+            Schedule
           </TabsTrigger>
         </TabsList>
 
@@ -205,33 +217,105 @@ export default function TodayPage() {
               No lessons today. Enjoy your day off!
             </p>
           ) : (
-            <div className="space-y-2">
-              {todayLessons.map((lesson) => (
-                <LessonCard key={lesson.id} lesson={lesson} onRefresh={() => fetchData(true)} />
-              ))}
-            </div>
+            (() => {
+              const now = Date.now();
+              const endOf = (l: Lesson) =>
+                new Date(l.scheduled_at).getTime() + (l.duration_min ?? 60) * 60_000;
+              const active = todayLessons.filter((l) => endOf(l) > now);
+              const finished = todayLessons.filter((l) => endOf(l) <= now);
+              // Anchor = first card in active list (closest-to-now actionable)
+              const anchorId = active[0]?.id;
+              return (
+                <>
+                  {active.length === 0 && finished.length > 0 && (
+                    <p
+                      className="text-center py-6"
+                      style={{ fontSize: "14px", color: "var(--ink-secondary)" }}
+                    >
+                      All done for today — {finished.length} {finished.length === 1 ? "lesson" : "lessons"} wrapped. ✓
+                    </p>
+                  )}
+                  {active.length > 0 && (
+                    <div>
+                      <div
+                        className="flex items-center gap-3 mb-4"
+                        style={{ color: "var(--ink-tertiary)" }}
+                      >
+                        <span
+                          style={{
+                            fontSize: "11px",
+                            fontWeight: 600,
+                            letterSpacing: "0.08em",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          Up next · {active.length}
+                        </span>
+                        <span
+                          className="flex-1"
+                          style={{ height: "1px", background: "var(--line-subtle)" }}
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        {active.map((lesson, i) => (
+                          <LessonCard
+                            key={lesson.id}
+                            lesson={lesson}
+                            index={i}
+                            isAnchor={lesson.id === anchorId}
+                            onRefresh={() => fetchData(true)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {finished.length > 0 && (
+                    <div style={{ paddingTop: "28px" }}>
+                      <button
+                        type="button"
+                        onClick={() => setShowFinished((v) => !v)}
+                        className="w-full flex items-center gap-3 mb-4 transition-colors"
+                        style={{ color: "var(--ink-tertiary)" }}
+                      >
+                        <span
+                          style={{
+                            fontSize: "11px",
+                            fontWeight: 600,
+                            letterSpacing: "0.08em",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          Finished · {finished.length}
+                        </span>
+                        <span
+                          className="flex-1"
+                          style={{ height: "1px", background: "var(--line-subtle)" }}
+                        />
+                        <span style={{ fontSize: "11px" }}>
+                          {showFinished ? "Hide" : "Show"}
+                        </span>
+                      </button>
+                      <div className="finished-collapse" data-open={showFinished}>
+                        <div>
+                          <div className="space-y-3">
+                            {finished.map((lesson, i) => (
+                              <LessonCard
+                                key={lesson.id}
+                                lesson={lesson}
+                                index={active.length + i}
+                                onRefresh={() => fetchData(true)}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()
           )}
 
-          {/* Past lessons section */}
-          {pastLessons.length > 0 && (
-            <div className="pt-2">
-              <button
-                onClick={() => setShowPast(!showPast)}
-                className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-500 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <span>Recent ({pastLessons.length} past lessons)</span>
-                <span className="text-xs">{showPast ? "▲ Hide" : "▼ Show"}</span>
-              </button>
-
-              {showPast && (
-                <div className="mt-2 space-y-2">
-                  {pastLessons.map((lesson) => (
-                    <LessonCard key={lesson.id} lesson={lesson} onRefresh={() => fetchData(true)} />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
         </TabsContent>
 
         {/* CALENDAR TAB */}

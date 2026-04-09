@@ -12,52 +12,50 @@ import {
 } from "@/components/ui/dialog";
 import CalendarPicker from "@/components/calendar-picker";
 import TimePickerInput from "@/components/time-picker";
-import type { Lesson, NoteStatus } from "@/lib/types";
+import type { Lesson } from "@/lib/types";
 
 interface LessonCardProps {
   lesson: Lesson;
   showStudent?: boolean;
   studentName?: string;
   onRefresh?: () => void;
+  isAnchor?: boolean;
+  index?: number;
 }
 
-function deriveNoteStatus(lesson: Lesson): NoteStatus {
-  if (lesson.note_status) return lesson.note_status;
-  if (lesson.student_summary_sent_at) return "sent";
-  if (lesson.raw_note && lesson.raw_note.trim().length > 0) return "draft";
-  return "not_started";
+type LessonTimeStatus = "upcoming" | "in_progress" | "finished";
+
+function deriveTimeStatus(lesson: Lesson, now: number): LessonTimeStatus {
+  const start = new Date(lesson.scheduled_at).getTime();
+  const end = start + (lesson.duration_min ?? 60) * 60_000;
+  if (now < start) return "upcoming";
+  if (now < end) return "in_progress";
+  return "finished";
 }
 
-function countAssignments(lesson: Lesson): number {
-  if (!lesson.raw_note) return 0;
-  try {
-    const parsed = JSON.parse(lesson.raw_note);
-    const list =
-      parsed?.lesson_report?.assignments ??
-      parsed?.assignments ??
-      [];
-    if (Array.isArray(list)) {
-      return list.filter(
-        (a: unknown) => typeof a === "string" && a.trim().length > 0
-      ).length;
-    }
-  } catch {
-    /* legacy */
-  }
-  return 0;
+function hasNotes(lesson: Lesson): boolean {
+  return !!(lesson.raw_note && lesson.raw_note.trim().length > 0);
 }
+
+const BADGE_LABELS: Record<LessonTimeStatus, string> = {
+  upcoming: "Upcoming",
+  in_progress: "In progress",
+  finished: "Finished",
+};
 
 export default function LessonCard({
   lesson,
   showStudent = true,
   studentName,
   onRefresh,
+  isAnchor = false,
+  index = 0,
 }: LessonCardProps) {
   const router = useRouter();
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [sentEcho, setSentEcho] = useState<string | null>(null);
+  const [nowTick, setNowTick] = useState<number>(() => Date.now());
 
   const lessonDate = new Date(lesson.scheduled_at);
   const [editDate, setEditDate] = useState(
@@ -71,30 +69,16 @@ export default function LessonCard({
 
   const time = lessonDate.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
-  const noteStatus = deriveNoteStatus(lesson);
   const displayName = lesson.student?.name ?? studentName ?? "Student";
-  const assignmentsCount = countAssignments(lesson);
+  const timeStatus = deriveTimeStatus(lesson, nowTick);
+  const noteExists = hasNotes(lesson);
+  const ctaLabel = noteExists ? "View notes" : "Write notes";
+  const badgeLabel = BADGE_LABELS[timeStatus];
 
   useEffect(() => {
-    if (noteStatus !== "sent" || typeof window === "undefined") return;
-    try {
-      const raw = sessionStorage.getItem(`keepsy:sent:${lesson.id}`);
-      if (!raw) return;
-      const { elapsed, at } = JSON.parse(raw) as { elapsed: number; at: number };
-      if (Date.now() - at > 10_000) {
-        sessionStorage.removeItem(`keepsy:sent:${lesson.id}`);
-        return;
-      }
-      setSentEcho(`sent in ${elapsed}s`);
-      const t = setTimeout(() => {
-        setSentEcho(null);
-        sessionStorage.removeItem(`keepsy:sent:${lesson.id}`);
-      }, 4000);
-      return () => clearTimeout(t);
-    } catch {
-      /* ignore */
-    }
-  }, [noteStatus, lesson.id]);
+    const id = setInterval(() => setNowTick(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   function doRefresh() {
     router.refresh();
@@ -143,11 +127,11 @@ export default function LessonCard({
     }
   }
 
-  function goCapture(mode: "voice" | "type") {
-    router.push(`/lessons/${lesson.id}/capture${mode === "type" ? "?mode=type" : ""}`);
+  function goCapture() {
+    router.push(`/lessons/${lesson.id}/capture`);
   }
 
-  // --- CANCELLED state: simple faded row ---
+  // --- CANCELLED state: simple faded row (unchanged) ---
   if (lesson.status === "cancelled") {
     return (
       <div
@@ -159,185 +143,181 @@ export default function LessonCard({
     );
   }
 
-  // --- SENT state: single-line receipt, recedes ---
-  if (noteStatus === "sent") {
-    const sentAt = lesson.student_summary_sent_at
-      ? new Date(lesson.student_summary_sent_at).toLocaleTimeString([], {
-          hour: "numeric",
-          minute: "2-digit",
-        })
-      : null;
-    return (
-      <div
-        className="px-4 py-2.5 flex items-baseline justify-between text-[13px]"
-        style={{ color: "var(--ink-tertiary)" }}
-      >
-        <div className="flex items-baseline gap-2.5 min-w-0">
-          <span
-            className="tabular-nums font-semibold"
-            style={{ color: "var(--ink-secondary)" }}
-          >
-            {time}
-          </span>
-          {showStudent && <span className="truncate">{displayName}</span>}
-        </div>
-        <div className="flex items-baseline gap-2 text-[12px]">
-          <span style={{ color: "var(--success)" }}>
-            ✓{sentAt ? ` ${sentAt}` : ""}
-          </span>
-          {sentEcho && <span className="italic">{sentEcho}</span>}
-        </div>
-      </div>
-    );
-  }
+  const showSecondary = lesson.status === "scheduled" && timeStatus === "upcoming";
+  const isInProgress = timeStatus === "in_progress";
+  const minsSinceStart = Math.max(
+    0,
+    Math.floor((nowTick - lessonDate.getTime()) / 60_000)
+  );
+  const durationLabel = isInProgress
+    ? `started ${minsSinceStart} min ago`
+    : lesson.duration_min
+    ? `${lesson.duration_min} min`
+    : null;
 
-  // --- DRAFT state: 3-line task card, metadata only, no message content ---
-  if (noteStatus === "draft") {
-    const metaLine =
-      assignmentsCount > 0
-        ? `Draft · ${assignmentsCount} assignment${assignmentsCount === 1 ? "" : "s"}`
-        : "Draft · ready";
-    return (
-      <>
-        <button
-          type="button"
-          onClick={() => goCapture("voice")}
-          className="w-full text-left px-4 py-5 transition-transform active:scale-[0.99]"
-          style={{
-            backgroundColor: "var(--accent-soft)",
-            borderRadius: "var(--radius-card)",
-            boxShadow: "var(--shadow-card)",
-          }}
-        >
-          <div className="flex items-baseline justify-between gap-2">
-            <div className="flex items-baseline gap-2.5 min-w-0">
-              <span
-                className="text-[17px] font-semibold tabular-nums"
-                style={{ color: "var(--ink-primary)", letterSpacing: "-0.01em" }}
-              >
-                {time}
-              </span>
-              {showStudent && (
-                <span
-                  className="text-[15px] font-medium truncate"
-                  style={{ color: "var(--ink-primary)" }}
-                >
-                  {displayName}
-                </span>
-              )}
-            </div>
-            <span
-              className="text-sm leading-none"
-              style={{ color: "var(--accent)" }}
-              aria-label="draft"
-            >
-              ●
-            </span>
-          </div>
-
-          <p
-            className="text-[12px] mt-1.5 mb-4"
-            style={{ color: "var(--ink-secondary)" }}
-          >
-            {metaLine}
-          </p>
-
-          <div
-            className="w-full h-12 flex items-center justify-center text-[15px] font-semibold text-white"
-            style={{
-              backgroundColor: "var(--accent)",
-              borderRadius: "var(--radius)",
-              boxShadow: "var(--shadow-cta)",
-              letterSpacing: "-0.005em",
-            }}
-          >
-            Continue
-          </div>
-        </button>
-        {renderSchedulingDialogs()}
-      </>
-    );
-  }
-
-  // --- NOT_STARTED state: task card, single "Start notes" CTA ---
   return (
     <>
       <div
-        className="px-4 py-5"
+        className="lesson-card"
         style={{
-          backgroundColor: "var(--bg-surface)",
-          borderRadius: "var(--radius-card)",
-          boxShadow: "var(--shadow-card)",
+          padding: "22px 22px 20px 22px",
+          backgroundColor: isInProgress
+            ? "var(--card-progress-tint)"
+            : "var(--bg-surface)",
+          borderRadius: "18px",
+          boxShadow: isInProgress
+            ? "0 2px 4px rgba(165, 82, 42, 0.06), 0 8px 20px -8px rgba(165, 82, 42, 0.18)"
+            : "var(--shadow-card)",
+          borderLeft: isAnchor || isInProgress
+            ? "4px solid var(--accent)"
+            : "4px solid transparent",
+          animationDelay: `${Math.min(index, 10) * 40}ms`,
         }}
       >
-        <div className="flex items-baseline justify-between gap-2">
-          <div className="flex items-baseline gap-2.5 min-w-0">
-            <span
-              className="text-[17px] font-semibold tabular-nums"
-              style={{ color: "var(--ink-primary)", letterSpacing: "-0.01em" }}
-            >
-              {time}
-            </span>
-            {showStudent && (
-              <span
-                className="text-[15px] font-medium truncate"
-                style={{ color: "var(--ink-primary)" }}
-              >
-                {displayName}
-              </span>
-            )}
-          </div>
+        {/* Row 1: time + badge */}
+        <div className="flex items-center justify-between gap-3">
           <span
-            style={{ color: "var(--ink-tertiary)" }}
-            aria-label="not started"
-            title="not started"
+            className="tabular-nums"
+            style={{
+              fontSize: "24px",
+              lineHeight: "30px",
+              fontWeight: 600,
+              letterSpacing: "-0.015em",
+              color: "var(--ink-primary)",
+            }}
           >
-            ◌
+            {time}
+          </span>
+          <span
+            className="shrink-0"
+            style={{
+              fontSize: "14px",
+              lineHeight: "18px",
+              fontWeight: 500,
+              letterSpacing: "0",
+              color: "var(--ink-tertiary)",
+              padding: 0,
+            }}
+          >
+            {badgeLabel}
           </span>
         </div>
 
-        <p
-          className="text-[12px] mt-1.5 mb-4"
-          style={{ color: "var(--ink-secondary)" }}
-        >
-          {lesson.duration_min ? `${lesson.duration_min} min` : "\u00A0"}
-        </p>
-
-        <Button
-          className="w-full h-12 text-[15px] font-semibold"
-          style={{
-            backgroundColor: "var(--accent)",
-            borderRadius: "var(--radius)",
-            boxShadow: "var(--shadow-cta)",
-            letterSpacing: "-0.005em",
-          }}
-          onClick={() => goCapture("voice")}
-        >
-          Start notes
-        </Button>
-
-        {lesson.status === "scheduled" && (
-          <div
-            className="flex gap-3 mt-4 pt-3"
-            style={{ borderTop: "1px solid var(--line-subtle)" }}
+        {/* Row 2: student name (primary) + duration (muted) */}
+        {(showStudent || durationLabel) && (
+          <p
+            className="truncate"
+            style={{
+              marginTop: "10px",
+              letterSpacing: "-0.005em",
+              color: "var(--ink-primary)",
+            }}
           >
+            {showStudent && (
+              <span style={{ fontSize: "18px", fontWeight: 500, lineHeight: "24px" }}>
+                {displayName}
+              </span>
+            )}
+            {showStudent && durationLabel && (
+              <span
+                style={{
+                  fontSize: "14px",
+                  fontWeight: isInProgress ? 500 : 400,
+                  color: isInProgress ? "var(--ink-primary)" : "var(--ink-secondary)",
+                  marginLeft: "8px",
+                }}
+              >
+                {durationLabel}
+              </span>
+            )}
+            {!showStudent && durationLabel && (
+              <span
+                style={{
+                  fontSize: "14px",
+                  fontWeight: 400,
+                  color: "var(--ink-secondary)",
+                }}
+              >
+                {durationLabel}
+              </span>
+            )}
+          </p>
+        )}
+
+        {/* Row 3: text-style CTA — only after the lesson ends */}
+        {timeStatus === "finished" && (() => {
+          // finished + empty → accent/600 (primary action)
+          // finished + noteExists → tertiary/500 (archival)
+          const emphasize = !noteExists;
+          return (
             <button
               type="button"
-              className="text-[11px] transition-colors"
-              style={{ color: "var(--ink-tertiary)" }}
-              onClick={() => setShowCancelDialog(true)}
-              disabled={loading}
+              className={`lesson-cta ${emphasize ? "lesson-cta-write" : "lesson-cta-view"}`}
+              style={{
+                marginTop: "14px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                fontSize: "14px",
+                lineHeight: "20px",
+                letterSpacing: "-0.005em",
+                color: emphasize ? "var(--accent-ink)" : "var(--ink-tertiary)",
+                fontWeight: emphasize ? 600 : 500,
+                background: "transparent",
+                border: "none",
+                padding: 0,
+              }}
+              onClick={goCapture}
             >
-              Cancel lesson
+              <span style={{ textDecoration: "underline", textUnderlineOffset: "3px" }}>
+                {ctaLabel}
+              </span>
             </button>
+          );
+        })()}
+
+        {/* Row 4: secondary actions */}
+        {showSecondary && (
+          <div className="flex items-center" style={{ marginTop: "18px", gap: "16px" }}>
             <button
               type="button"
-              className="text-[11px] transition-colors"
-              style={{ color: "var(--ink-tertiary)" }}
+              className="transition-colors"
+              style={{
+                fontSize: "13px",
+                lineHeight: "18px",
+                fontWeight: 400,
+                color: "var(--ink-tertiary)",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.color = "var(--ink-secondary)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.color = "var(--ink-tertiary)")
+              }
               onClick={() => setShowEditDialog(true)}
               disabled={loading}
             >
-              Edit time
+              Modify
+            </button>
+            <button
+              type="button"
+              className="transition-colors"
+              style={{
+                fontSize: "13px",
+                lineHeight: "18px",
+                fontWeight: 400,
+                color: "var(--ink-tertiary)",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.color = "var(--ink-secondary)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.color = "var(--ink-tertiary)")
+              }
+              onClick={() => setShowCancelDialog(true)}
+              disabled={loading}
+            >
+              Cancel
             </button>
           </div>
         )}
