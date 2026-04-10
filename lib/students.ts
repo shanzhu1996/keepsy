@@ -7,6 +7,7 @@ export async function getStudents(): Promise<Student[]> {
     .from("students")
     .select("*")
     .eq("is_active", true)
+    .order("display_order", { ascending: true })
     .order("name");
 
   if (error) throw error;

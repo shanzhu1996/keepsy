@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import type { Student } from "@/lib/types";
 
 interface StudentPaymentBannerProps {
@@ -23,34 +22,25 @@ function fmtDate(iso: string) {
   });
 }
 
-const STATUS_STYLES = {
+const STATUS_CONFIG = {
   overdue: {
-    wrapper: "bg-amber-50 border-amber-300",
-    label: "text-amber-900",
-    badge: "bg-amber-500 text-white",
-    bar: "bg-amber-500",
-    meta: "text-amber-700",
+    badgeBg: "var(--accent-soft)",
+    badgeInk: "var(--accent-ink)",
+    barColor: "var(--accent)",
+    label: "overdue",
   },
   paid: {
-    wrapper: "bg-green-50 border-green-200",
-    label: "text-green-900",
-    badge: "bg-green-500 text-white",
-    bar: "bg-green-400",
-    meta: "text-green-700",
+    badgeBg: "var(--bg-muted)",
+    badgeInk: "var(--ink-secondary)",
+    barColor: "var(--success)",
+    label: "paid",
   },
   pending: {
-    wrapper: "bg-gray-50 border-gray-200",
-    label: "text-gray-700",
-    badge: "bg-gray-300 text-gray-700",
-    bar: "bg-gray-300",
-    meta: "text-gray-500",
+    badgeBg: "var(--bg-muted)",
+    badgeInk: "var(--ink-tertiary)",
+    barColor: "var(--line-strong)",
+    label: "pending",
   },
-};
-
-const STATUS_LABEL = {
-  overdue: "Overdue",
-  paid: "Paid",
-  pending: "Pending",
 };
 
 export default function StudentPaymentBanner({
@@ -96,26 +86,43 @@ export default function StudentPaymentBanner({
 
   const cycleLength = student.billing_cycle_lessons;
   const progressPct = Math.min((lessonsInCurrentCycle / cycleLength) * 100, 100);
-  const s = STATUS_STYLES[billingStatus];
+  const cfg = STATUS_CONFIG[billingStatus];
 
   return (
-    <div className={`rounded-xl p-4 mb-4 border ${s.wrapper}`}>
+    <div
+      className="rounded-xl px-4 py-4 mb-4"
+      style={{
+        backgroundColor: "var(--bg-surface)",
+        border: `1px solid ${billingStatus === "overdue" ? "var(--accent)" : "var(--line-subtle)"}`,
+        borderLeftWidth: billingStatus === "overdue" ? "3px" : "1px",
+      }}
+    >
       <div className="flex justify-between items-start mb-2">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <p className={`text-sm font-medium ${s.label}`}>Billing cycle</p>
-            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${s.badge}`}>
-              {STATUS_LABEL[billingStatus]}
+            <p className="text-sm font-medium" style={{ color: "var(--ink-primary)" }}>
+              billing cycle
+            </p>
+            <span
+              className="text-xs font-medium px-2 py-0.5 rounded-full"
+              style={{ backgroundColor: cfg.badgeBg, color: cfg.badgeInk }}
+            >
+              {cfg.label}
             </span>
           </div>
 
           {billingStatus === "overdue" && amountDue > 0 && isCurrentCycleComplete && (
-            <p className="text-2xl font-bold text-amber-900">${amountDue.toFixed(2)}</p>
+            <p
+              className="text-2xl font-bold font-display-numerals"
+              style={{ color: "var(--accent-ink)" }}
+            >
+              ${amountDue.toFixed(2)}
+            </p>
           )}
 
-          <p className={`text-xs mt-0.5 ${s.meta}`}>
-            {lessonsInCurrentCycle} / {cycleLength} lessons
-            {student.cycle_price && billingStatus !== "overdue" ? ` · $${student.cycle_price}/cycle` : ""}
+          <p className="text-xs mt-0.5" style={{ color: "var(--ink-tertiary)" }}>
+            {lessonsInCurrentCycle} of {cycleLength} lessons
+            {student.cycle_price && billingStatus !== "overdue" ? ` · $${student.cycle_price}` : ""}
             {cycleStartDate && (
               <span className="ml-1">
                 · {fmtDate(cycleStartDate)}
@@ -126,49 +133,80 @@ export default function StudentPaymentBanner({
         </div>
 
         {billingStatus === "overdue" && (
-          <Button
+          <button
             onClick={() => setShowManual(true)}
             disabled={loading}
-            className="bg-green-600 hover:bg-green-700 text-white"
+            className="text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
+            style={{
+              backgroundColor: "var(--success)",
+              color: "#fff",
+            }}
           >
-            Student Paid ✓
-          </Button>
+            student paid
+          </button>
         )}
       </div>
 
       {/* Progress bar */}
-      <div className="w-full bg-gray-200 rounded-full h-1.5 mb-3">
+      <div
+        className="w-full rounded-full h-1.5 mb-3"
+        style={{ backgroundColor: "var(--line-subtle)" }}
+      >
         <div
-          className={`h-1.5 rounded-full transition-all ${s.bar}`}
-          style={{ width: `${progressPct}%` }}
+          className="h-1.5 rounded-full transition-all"
+          style={{ width: `${progressPct}%`, backgroundColor: cfg.barColor }}
         />
       </div>
 
       {billingStatus === "overdue" && !showManual && (
         <button
           onClick={() => setShowManual(true)}
-          className="text-xs text-gray-400 hover:text-gray-600 underline"
+          className="text-xs transition-colors"
+          style={{
+            color: "var(--ink-tertiary)",
+            textDecoration: "underline",
+            textUnderlineOffset: "3px",
+          }}
         >
-          Record a payment manually
+          record a payment manually
         </button>
       )}
 
       {showManual && (
-        <div className="flex gap-2 items-center mt-1 pt-2 border-t border-gray-200">
-          <span className="text-xs text-gray-600">Amount $</span>
+        <div
+          className="flex gap-2 items-center mt-1 pt-2"
+          style={{ borderTop: "1px solid var(--line-subtle)" }}
+        >
+          <span className="text-xs" style={{ color: "var(--ink-secondary)" }}>
+            amount $
+          </span>
           <input
             type="number"
             min="0"
             step="0.01"
             value={manualAmount}
             onChange={(e) => setManualAmount(e.target.value)}
-            className="border border-gray-300 rounded px-2 py-1 text-sm text-gray-900 bg-white w-24 focus:outline-none focus:ring-1 focus:ring-amber-500"
+            className="rounded px-2 py-1 text-sm w-24 focus:outline-none focus:ring-1"
+            style={{
+              border: "1px solid var(--line-strong)",
+              backgroundColor: "var(--bg-surface)",
+              color: "var(--ink-primary)",
+            }}
             placeholder="0.00"
           />
-          <Button size="sm" onClick={handleRecordPayment} disabled={loading || !manualAmount}>
-            {loading ? "Saving…" : "Record"}
-          </Button>
-          <button onClick={() => setShowManual(false)} className="text-xs text-gray-400 hover:text-gray-600">
+          <button
+            onClick={handleRecordPayment}
+            disabled={loading || !manualAmount}
+            className="text-sm font-medium px-3 py-1 rounded-lg transition-colors disabled:opacity-50"
+            style={{ backgroundColor: "var(--accent)", color: "#fff" }}
+          >
+            {loading ? "saving…" : "record"}
+          </button>
+          <button
+            onClick={() => setShowManual(false)}
+            className="text-xs transition-colors"
+            style={{ color: "var(--ink-tertiary)" }}
+          >
             cancel
           </button>
         </div>

@@ -3,15 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import type { TeacherProfile } from "@/lib/settings";
 
 interface SettingsFormProps {
   profile: TeacherProfile | null;
 }
+
+const DURATION_OPTIONS = ["30", "45", "60", "90"];
+const CYCLE_OPTIONS = ["1", "4", "8", "12"];
 
 export default function SettingsForm({ profile }: SettingsFormProps) {
   const router = useRouter();
@@ -21,8 +20,20 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
   const [defaultDuration, setDefaultDuration] = useState(
     profile?.default_duration_min?.toString() ?? "60"
   );
+  const [customDuration, setCustomDuration] = useState(
+    !DURATION_OPTIONS.includes(profile?.default_duration_min?.toString() ?? "60")
+  );
   const [hourlyRate, setHourlyRate] = useState(
     profile?.default_hourly_rate?.toString() ?? ""
+  );
+  const [defaultCycleLessons, setDefaultCycleLessons] = useState(
+    profile?.default_cycle_lessons?.toString() ?? "4"
+  );
+  const [customCycle, setCustomCycle] = useState(
+    !CYCLE_OPTIONS.includes(profile?.default_cycle_lessons?.toString() ?? "4")
+  );
+  const [defaultCyclePrice, setDefaultCyclePrice] = useState(
+    profile?.default_cycle_price?.toString() ?? ""
   );
   const [timezone, setTimezone] = useState(
     profile?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -46,6 +57,8 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
         name: name || null,
         default_duration_min: parseInt(defaultDuration) || 60,
         default_hourly_rate: hourlyRate ? parseFloat(hourlyRate) : null,
+        default_cycle_lessons: parseInt(defaultCycleLessons) || null,
+        default_cycle_price: defaultCyclePrice ? parseFloat(defaultCyclePrice) : null,
         timezone,
       };
 
@@ -73,132 +86,247 @@ export default function SettingsForm({ profile }: SettingsFormProps) {
     router.push("/login");
   }
 
+  const inputStyle: React.CSSProperties = {
+    backgroundColor: "var(--bg-surface)",
+    border: "1px solid var(--line-strong)",
+    color: "var(--ink-primary)",
+    borderRadius: "10px",
+    padding: "10px 14px",
+    fontSize: "15px",
+    width: "100%",
+    outline: "none",
+    transition: "border-color 150ms ease",
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Teacher Profile */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Teacher Profile</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="text-sm font-medium block mb-1">Your Name</label>
-              <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Sarah Chen"
-              />
-            </div>
+    <div className="keepsy-rise keepsy-rise-1">
+      <h1
+        className="font-display text-2xl mb-6"
+        style={{ color: "var(--ink-primary)" }}
+      >
+        settings
+      </h1>
 
-            <div>
-              <label className="text-sm font-medium block mb-1">Timezone</label>
-              <Input
-                value={timezone}
-                onChange={(e) => setTimezone(e.target.value)}
-                placeholder="e.g. America/New_York"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Detected: {Intl.DateTimeFormat().resolvedOptions().timeZone}
-              </p>
-            </div>
+      <form onSubmit={handleSubmit}>
+        {/* Profile */}
+        <div className="mb-4">
+          <label className="text-sm font-medium mb-1.5 block" style={{ color: "var(--ink-secondary)" }}>
+            your name
+          </label>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            style={inputStyle}
+            onFocus={(e) => (e.target.style.borderColor = "var(--accent)")}
+            onBlur={(e) => (e.target.style.borderColor = "var(--line-strong)")}
+            placeholder="e.g. Sarah Chen"
+          />
+        </div>
 
-            <Separator />
+        <div className="mb-5">
+          <label className="text-sm font-medium mb-1.5 block" style={{ color: "var(--ink-secondary)" }}>
+            timezone
+          </label>
+          <input
+            value={timezone}
+            onChange={(e) => setTimezone(e.target.value)}
+            style={inputStyle}
+            onFocus={(e) => (e.target.style.borderColor = "var(--accent)")}
+            onBlur={(e) => (e.target.style.borderColor = "var(--line-strong)")}
+          />
+          <p className="text-xs mt-1" style={{ color: "var(--ink-tertiary)" }}>
+            detected: {Intl.DateTimeFormat().resolvedOptions().timeZone}
+          </p>
+        </div>
 
-            <h3 className="font-semibold text-sm">Lesson Defaults</h3>
+        <div style={{ height: "1px", backgroundColor: "var(--line-strong)", margin: "0 0 16px" }} />
 
-            <div>
-              <label className="text-sm font-medium block mb-1">
-                Default Lesson Duration (minutes)
-              </label>
-              <Input
-                type="number"
-                min="15"
-                step="15"
+        {/* Lesson defaults */}
+        <p
+          className="text-xs font-medium mb-3"
+          style={{ color: "var(--ink-tertiary)", letterSpacing: "0.04em", textTransform: "uppercase" }}
+        >
+          lesson defaults
+        </p>
+
+        <div className="mb-4">
+          <label className="text-sm font-medium mb-2 block" style={{ color: "var(--ink-secondary)" }}>
+            default duration
+          </label>
+          <div className="flex gap-2 flex-wrap">
+            {DURATION_OPTIONS.map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => { setDefaultDuration(opt); setCustomDuration(false); }}
+                className="px-4 py-1.5 rounded-full text-sm font-medium transition-colors"
+                style={{
+                  backgroundColor: !customDuration && defaultDuration === opt ? "var(--accent-soft)" : "transparent",
+                  color: !customDuration && defaultDuration === opt ? "var(--accent-ink)" : "var(--ink-primary)",
+                  border: `1px solid ${!customDuration && defaultDuration === opt ? "var(--accent)" : "var(--line-strong)"}`,
+                }}
+              >
+                {opt} min
+              </button>
+            ))}
+            {customDuration ? (
+              <input
+                type="number" min="15" step="15"
                 value={defaultDuration}
                 onChange={(e) => setDefaultDuration(e.target.value)}
-                placeholder="60"
+                autoFocus
+                className="rounded-full text-sm font-medium text-center"
+                style={{
+                  width: "72px", padding: "6px 12px",
+                  backgroundColor: "var(--accent-soft)", color: "var(--accent-ink)",
+                  border: "1px solid var(--accent)", outline: "none",
+                }}
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Pre-fills when creating new lessons.
-              </p>
-            </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => { setCustomDuration(true); setDefaultDuration(""); }}
+                className="px-4 py-1.5 rounded-full text-sm font-medium transition-colors"
+                style={{ backgroundColor: "transparent", color: "var(--ink-tertiary)", border: "1px solid var(--line-strong)" }}
+              >
+                other
+              </button>
+            )}
+          </div>
+        </div>
 
-            <div>
-              <label className="text-sm font-medium block mb-1">
-                Default Hourly Rate ($)
-              </label>
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={hourlyRate}
-                onChange={(e) => setHourlyRate(e.target.value)}
-                placeholder="e.g. 80"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Used as reference when setting per-student billing.
-              </p>
-            </div>
-
-            {error && <p className="text-sm text-red-600">{error}</p>}
-
-            <Button type="submit" className="w-full" disabled={saving}>
-              {saved ? "✓ Saved!" : saving ? "Saving..." : "Save Settings"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      {/* Account */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Account</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-gray-600">
-            Signed in as{" "}
-            <span className="font-medium">{profile?.email ?? "—"}</span>
+        <div className="mb-5">
+          <label className="text-sm font-medium mb-1.5 block" style={{ color: "var(--ink-secondary)" }}>
+            default hourly rate
+          </label>
+          <div className="relative" style={{ maxWidth: "160px" }}>
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm" style={{ color: "var(--ink-tertiary)" }}>$</span>
+            <input
+              type="number" min="0" step="0.01"
+              value={hourlyRate}
+              onChange={(e) => setHourlyRate(e.target.value)}
+              style={{ ...inputStyle, paddingLeft: "24px" }}
+              onFocus={(e) => (e.target.style.borderColor = "var(--accent)")}
+              onBlur={(e) => (e.target.style.borderColor = "var(--line-strong)")}
+            />
+          </div>
+          <p className="text-xs mt-1" style={{ color: "var(--ink-tertiary)" }}>
+            reference when setting per-student billing
           </p>
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={handleSignOut}
+        </div>
+
+        <div style={{ height: "1px", backgroundColor: "var(--line-strong)", margin: "0 0 16px" }} />
+
+        {/* Billing defaults */}
+        <p
+          className="text-xs font-medium mb-3"
+          style={{ color: "var(--ink-tertiary)", letterSpacing: "0.04em", textTransform: "uppercase" }}
+        >
+          billing defaults
+        </p>
+        <p className="text-xs mb-4" style={{ color: "var(--ink-tertiary)" }}>
+          pre-fills when adding new students
+        </p>
+
+        <div className="mb-4">
+          <label className="text-sm font-medium mb-2 block" style={{ color: "var(--ink-secondary)" }}>
+            lessons per cycle
+          </label>
+          <div className="flex gap-2 flex-wrap">
+            {CYCLE_OPTIONS.map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => { setDefaultCycleLessons(opt); setCustomCycle(false); }}
+                className="px-4 py-1.5 rounded-full text-sm font-medium transition-colors"
+                style={{
+                  backgroundColor: !customCycle && defaultCycleLessons === opt ? "var(--accent-soft)" : "transparent",
+                  color: !customCycle && defaultCycleLessons === opt ? "var(--accent-ink)" : "var(--ink-primary)",
+                  border: `1px solid ${!customCycle && defaultCycleLessons === opt ? "var(--accent)" : "var(--line-strong)"}`,
+                }}
+              >
+                {opt}
+              </button>
+            ))}
+            {customCycle ? (
+              <input
+                type="number" min="1"
+                value={defaultCycleLessons}
+                onChange={(e) => setDefaultCycleLessons(e.target.value)}
+                autoFocus
+                className="rounded-full text-sm font-medium text-center"
+                style={{
+                  width: "64px", padding: "6px 12px",
+                  backgroundColor: "var(--accent-soft)", color: "var(--accent-ink)",
+                  border: "1px solid var(--accent)", outline: "none",
+                }}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => { setCustomCycle(true); setDefaultCycleLessons(""); }}
+                className="px-4 py-1.5 rounded-full text-sm font-medium transition-colors"
+                style={{ backgroundColor: "transparent", color: "var(--ink-tertiary)", border: "1px solid var(--line-strong)" }}
+              >
+                other
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="mb-5">
+          <label className="text-sm font-medium mb-1.5 block" style={{ color: "var(--ink-secondary)" }}>
+            price per cycle
+          </label>
+          <div className="relative" style={{ maxWidth: "160px" }}>
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm" style={{ color: "var(--ink-tertiary)" }}>$</span>
+            <input
+              type="number" min="0" step="0.01"
+              value={defaultCyclePrice}
+              onChange={(e) => setDefaultCyclePrice(e.target.value)}
+              style={{ ...inputStyle, paddingLeft: "24px" }}
+              onFocus={(e) => (e.target.style.borderColor = "var(--accent)")}
+              onBlur={(e) => (e.target.style.borderColor = "var(--line-strong)")}
+            />
+          </div>
+        </div>
+
+        {error && (
+          <p className="text-sm mb-3" style={{ color: "var(--danger)" }}>{error}</p>
+        )}
+
+        {/* Save */}
+        <div style={{ marginTop: "24px", paddingTop: "14px", borderTop: "1px solid var(--line-strong)" }}>
+          <button
+            type="submit"
+            disabled={saving}
+            className="w-full py-2.5 rounded-xl text-base font-medium transition-colors disabled:opacity-50"
+            style={{ backgroundColor: "var(--accent)", color: "#fff" }}
           >
-            Sign Out
-          </Button>
-        </CardContent>
-      </Card>
+            {saved ? "saved!" : saving ? "saving…" : "save settings"}
+          </button>
+        </div>
+      </form>
 
-      {/* Setup Reminder */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Database Setup</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-gray-600 mb-3">
-            If the Settings page shows errors, make sure you&apos;ve run this
-            SQL in your Supabase SQL Editor:
-          </p>
-          <pre className="text-xs bg-gray-50 p-3 rounded border overflow-x-auto">
-{`create table teacher_profiles (
-  id uuid primary key default uuid_generate_v4(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  name text,
-  email text,
-  default_duration_min integer not null default 60,
-  default_hourly_rate numeric(10,2),
-  timezone text not null default 'UTC',
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique(user_id)
-);
-alter table teacher_profiles enable row level security;
-create policy "Users manage own profile"
-  on teacher_profiles for all using (auth.uid() = user_id);`}
-          </pre>
-        </CardContent>
-      </Card>
+      {/* Account section */}
+      <div style={{ marginTop: "32px", paddingTop: "16px", borderTop: "1px solid var(--line-strong)" }}>
+        <p
+          className="text-xs font-medium mb-3"
+          style={{ color: "var(--ink-tertiary)", letterSpacing: "0.04em", textTransform: "uppercase" }}
+        >
+          account
+        </p>
+        <p className="text-sm mb-3" style={{ color: "var(--ink-secondary)" }}>
+          signed in as <span className="font-medium" style={{ color: "var(--ink-primary)" }}>{profile?.email ?? "—"}</span>
+        </p>
+        <button
+          onClick={handleSignOut}
+          className="text-sm font-medium transition-colors"
+          style={{ color: "var(--danger)", textDecoration: "underline", textUnderlineOffset: "3px" }}
+        >
+          sign out
+        </button>
+      </div>
     </div>
   );
 }

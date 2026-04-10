@@ -3,9 +3,6 @@ import Link from "next/link";
 import { getStudent } from "@/lib/students";
 import { getLessonsForStudent } from "@/lib/lessons";
 import { getPaymentsForStudent } from "@/lib/payments";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import LessonCard from "@/components/lesson-card";
 import PaymentCard from "@/components/payment-card";
 import StudentDetailClient from "@/components/student-detail-client";
@@ -60,9 +57,6 @@ export default async function StudentDetailPage({
       ? "paid"
       : "pending";
 
-  // What to display in the progress bar:
-  // If there's an unpaid complete cycle → show that full cycle (N/N)
-  // Otherwise → show current partial cycle progress
   let lessonsInCurrentCycle: number;
   let cycleStartDate: string | null;
   let cycleEndDate: string | null;
@@ -86,74 +80,124 @@ export default async function StudentDetailPage({
 
   return (
     <div>
-      {/* Student header — amber banner, white text */}
-      <div className="bg-amber-700 rounded-xl px-4 py-5 mb-4 flex justify-between items-start">
-        <div>
-          <h1 className="text-2xl font-bold text-white">{student.name}</h1>
-          {student.email && (
-            <p className="text-sm text-amber-100 mt-0.5">{student.email}</p>
-          )}
-          {student.phone && (
-            <p className="text-sm text-amber-100">{student.phone}</p>
-          )}
+      {/* Student header — clean Fraunces on canvas */}
+      <div className="mb-5 keepsy-rise keepsy-rise-1">
+        <div className="flex justify-between items-start">
+          <div>
+            <h1
+              className="font-display text-2xl"
+              style={{ color: "var(--ink-primary)" }}
+            >
+              {student.name.toLowerCase()}
+            </h1>
+            {student.email && (
+              <p className="text-sm mt-0.5" style={{ color: "var(--ink-secondary)" }}>
+                {student.email}
+              </p>
+            )}
+            {student.phone && (
+              <p className="text-sm" style={{ color: "var(--ink-secondary)" }}>
+                {student.phone}
+              </p>
+            )}
+          </div>
+          <Link
+            href={`/students/${id}/edit`}
+            className="text-xs font-medium transition-colors"
+            style={{
+              color: "var(--ink-secondary)",
+              textDecoration: "underline",
+              textUnderlineOffset: "3px",
+            }}
+          >
+            edit
+          </Link>
         </div>
-        <Link href={`/students/${id}/edit`}>
-          <button className="text-xs text-amber-100 border border-amber-400 rounded-md px-3 py-1.5 hover:bg-amber-600 transition-colors">
-            Edit
-          </button>
-        </Link>
       </div>
 
       {student.notes && (
-        <p className="text-sm text-gray-600 mb-4 bg-gray-50 p-3 rounded">
-          {student.notes}
-        </p>
-      )}
-
-      <StudentPaymentBanner
-        student={student}
-        billingStatus={billingStatus}
-        lessonsInCurrentCycle={lessonsInCurrentCycle}
-        isCurrentCycleComplete={isCurrentCycleComplete}
-        amountDue={amountDue}
-        cycleStartDate={cycleStartDate}
-        cycleEndDate={cycleEndDate}
-      />
-
-      {!student.billing_enabled && (
-        <div className="mb-2">
-          <Badge variant="outline">Billing off</Badge>
+        <div
+          className="rounded-xl px-3.5 py-3 mb-4 keepsy-rise keepsy-rise-2"
+          style={{
+            backgroundColor: "var(--bg-surface)",
+            border: "1px solid var(--line-subtle)",
+          }}
+        >
+          <p className="text-sm italic" style={{ color: "var(--ink-secondary)" }}>
+            {student.notes}
+          </p>
         </div>
       )}
 
-      <StudentMessagingClient
-        studentName={student.name}
-        studentPhone={student.phone}
-        studentEmail={student.email}
-        studentId={student.id}
-        nextLessonTime={nextLessonTime}
-        amountDue={amountDue}
-        autoRemind={student.auto_remind}
+      <div className="keepsy-rise keepsy-rise-2">
+        <StudentPaymentBanner
+          student={student}
+          billingStatus={billingStatus}
+          lessonsInCurrentCycle={lessonsInCurrentCycle}
+          isCurrentCycleComplete={isCurrentCycleComplete}
+          amountDue={amountDue}
+          cycleStartDate={cycleStartDate}
+          cycleEndDate={cycleEndDate}
+        />
+      </div>
+
+      {!student.billing_enabled && (
+        <div className="mb-3 keepsy-rise keepsy-rise-2">
+          <span
+            className="text-xs"
+            style={{ color: "var(--ink-tertiary)" }}
+          >
+            billing off
+          </span>
+        </div>
+      )}
+
+      <div className="keepsy-rise keepsy-rise-3">
+        <StudentMessagingClient
+          studentName={student.name}
+          studentPhone={student.phone}
+          studentEmail={student.email}
+          studentId={student.id}
+          nextLessonTime={nextLessonTime}
+          amountDue={amountDue}
+          autoRemind={student.auto_remind}
+        />
+      </div>
+
+      {/* Divider */}
+      <div
+        className="my-5"
+        style={{ height: "1px", backgroundColor: "var(--line-strong)" }}
       />
 
-      <Separator className="my-6" />
-
-      <div className="flex justify-between items-center mb-3">
-        <h2 className="text-lg font-semibold">Lessons</h2>
-        <Link href={`/today?newLesson=true&studentId=${id}`}>
-          <Button size="sm" variant="outline">
-            + Lesson
-          </Button>
+      <div className="flex justify-between items-center mb-3 keepsy-rise keepsy-rise-3">
+        <h2
+          className="font-display text-lg"
+          style={{ color: "var(--ink-primary)" }}
+        >
+          lessons
+        </h2>
+        <Link
+          href={`/today?newLesson=true&studentId=${id}`}
+          className="text-sm font-medium transition-colors"
+          style={{ color: "var(--accent)", textDecoration: "underline", textUnderlineOffset: "3px" }}
+        >
+          + lesson
         </Link>
       </div>
 
       <StudentDetailClient studentName={student.name} lessons={lessons} />
 
       {lessons.length === 0 ? (
-        <p className="text-sm text-gray-500 py-4">No lessons yet.</p>
+        <p
+          className="text-sm py-4 font-display italic"
+          style={{ color: "var(--ink-tertiary)" }}
+        >
+          no lessons yet
+        </p>
       ) : (
         <div className="space-y-2 mb-6">
-          {lessons.slice(0, 10).map((lesson) => (
+          {lessons.map((lesson) => (
             <LessonCard key={lesson.id} lesson={lesson} showStudent={false} studentName={student.name} />
           ))}
         </div>
@@ -161,8 +205,16 @@ export default async function StudentDetailPage({
 
       {student.billing_enabled && payments.length > 0 && (
         <>
-          <Separator className="my-6" />
-          <h2 className="text-lg font-semibold mb-3 text-gray-900">Payment History</h2>
+          <div
+            className="my-5"
+            style={{ height: "1px", backgroundColor: "var(--line-strong)" }}
+          />
+          <h2
+            className="font-display text-lg mb-3"
+            style={{ color: "var(--ink-primary)" }}
+          >
+            payment history
+          </h2>
           <div className="space-y-2">
             {payments.map((payment) => (
               <PaymentCard

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -44,7 +43,6 @@ export default function StudentMessagingClient({
   };
 
   async function openReminderDialog() {
-    // Pre-fill with default message then open dialog
     setReminderMsg(`Hi ${studentName}! Just a reminder about your lesson tomorrow at ${nextLessonTime}. See you then!`);
     setReminderSent(false);
     setShowReminderDialog(true);
@@ -71,13 +69,11 @@ export default function StudentMessagingClient({
   async function handleSendReminder() {
     setSendingReminder(true);
     try {
-      // Mark reminder as sent via the trigger API
       await fetch("/api/reminders/trigger", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ studentId, hoursBeforeLesson: 48 }),
       });
-      // Also send the custom SMS if phone exists
       if (studentPhone && reminderMsg) {
         await fetch("/api/notifications/send-sms", {
           method: "POST",
@@ -95,38 +91,41 @@ export default function StudentMessagingClient({
   }
 
   return (
-    <div className="mt-4 bg-gray-800 rounded-xl px-4 py-4">
-      <h2 className="text-base font-semibold text-white mb-3">Message Student</h2>
+    <div
+      className="mt-4 rounded-xl px-4 py-4"
+      style={{
+        backgroundColor: "var(--bg-surface)",
+        border: "1px solid var(--line-subtle)",
+      }}
+    >
+      <h2
+        className="font-display text-base mb-3"
+        style={{ color: "var(--ink-primary)" }}
+      >
+        message student
+      </h2>
 
       <div className="flex flex-wrap gap-2">
-        <Button
-          size="sm"
-          variant="outline"
-          className="border-gray-500 text-white hover:bg-gray-700"
-          onClick={() => openSMS("custom")}
-        >
-          💬 Send Message
-        </Button>
-        {amountDue && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="border-gray-500 text-white hover:bg-gray-700"
-            onClick={() => openSMS("payment_reminder")}
-          >
-            💰 Payment Reminder
-          </Button>
-        )}
-        {autoRemind && nextLessonTime && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="border-gray-500 text-white hover:bg-gray-700"
-            onClick={openReminderDialog}
-          >
-            🔔 Auto Reminder
-          </Button>
-        )}
+        {[
+          { label: "send message", icon: "💬", type: "custom" as const, show: true },
+          { label: "payment reminder", icon: "💰", type: "payment_reminder" as const, show: !!amountDue },
+          { label: "auto reminder", icon: "🔔", type: null, show: autoRemind && !!nextLessonTime },
+        ]
+          .filter((b) => b.show)
+          .map((b) => (
+            <button
+              key={b.label}
+              onClick={() => b.type ? openSMS(b.type) : openReminderDialog()}
+              className="text-sm px-3 py-1.5 rounded-lg transition-colors"
+              style={{
+                border: "1px solid var(--line-strong)",
+                color: "var(--ink-primary)",
+                backgroundColor: "transparent",
+              }}
+            >
+              {b.icon} {b.label}
+            </button>
+          ))}
       </div>
 
       {showSMS && (
@@ -142,74 +141,94 @@ export default function StudentMessagingClient({
         </div>
       )}
 
-      {/* Auto Reminder dialog — timing picker + editable message */}
+      {/* Auto Reminder dialog */}
       <Dialog open={showReminderDialog} onOpenChange={setShowReminderDialog}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Auto Reminder</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-1">
-            <div>
-              <p className="text-xs text-gray-500 mb-1">
-                Next lesson: <span className="font-medium text-gray-700">{nextLessonTime}</span>
-              </p>
-              <p className="text-sm font-medium text-gray-900 mb-2">Send reminder how long before?</p>
-              <div className="flex gap-2 flex-wrap">
-                {[
-                  { label: "Same day", hours: 6 },
-                  { label: "1 day before", hours: 24 },
-                  { label: "2 days before", hours: 48 },
-                  { label: "3 days before", hours: 72 },
-                ].map(({ label, hours }) => (
-                  <button
-                    key={hours}
-                    type="button"
-                    onClick={() => setReminderHours(hours)}
-                    className={`px-3 py-1.5 rounded-md border text-sm font-medium transition-colors ${
-                      reminderHours === hours
-                        ? "bg-amber-600 text-white border-amber-600"
-                        : "bg-white text-gray-700 border-gray-200 hover:border-gray-400"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={handleGenerateReminderAI}
-              disabled={generatingReminder}
-            >
-              {generatingReminder ? "Generating…" : "✨ Generate with AI"}
-            </Button>
-
-            <Textarea
-              value={reminderMsg}
-              onChange={(e) => setReminderMsg(e.target.value)}
-              rows={4}
-              placeholder="Write a reminder message…"
-            />
-
-            {!studentPhone && (
-              <p className="text-xs text-red-500">No phone number — add one to send SMS.</p>
-            )}
-
-            <div className="flex gap-2">
-              <Button
-                className="flex-1"
-                onClick={handleSendReminder}
-                disabled={sendingReminder || !reminderMsg}
+        <DialogContent className="max-w-sm" style={{ padding: 0 }}>
+          <div style={{ padding: "20px 24px" }}>
+            <DialogHeader>
+              <DialogTitle
+                className="font-display text-xl"
+                style={{ color: "var(--ink-primary)" }}
               >
-                {reminderSent ? "Sent! ✓" : sendingReminder ? "Sending…" : "Send SMS"}
-              </Button>
-              <Button variant="outline" onClick={() => setShowReminderDialog(false)}>
-                Cancel
-              </Button>
+                auto reminder
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-3">
+              <div>
+                <p className="text-xs mb-1" style={{ color: "var(--ink-tertiary)" }}>
+                  next lesson: <span className="font-medium" style={{ color: "var(--ink-secondary)" }}>{nextLessonTime}</span>
+                </p>
+                <p className="text-sm font-medium mb-2" style={{ color: "var(--ink-primary)" }}>
+                  send reminder how long before?
+                </p>
+                <div className="flex gap-2 flex-wrap">
+                  {[
+                    { label: "same day", hours: 6 },
+                    { label: "1 day before", hours: 24 },
+                    { label: "2 days before", hours: 48 },
+                    { label: "3 days before", hours: 72 },
+                  ].map(({ label, hours }) => (
+                    <button
+                      key={hours}
+                      type="button"
+                      onClick={() => setReminderHours(hours)}
+                      className="px-3 py-1.5 rounded-full text-sm font-medium transition-colors"
+                      style={{
+                        backgroundColor: reminderHours === hours ? "var(--accent-soft)" : "transparent",
+                        color: reminderHours === hours ? "var(--accent-ink)" : "var(--ink-primary)",
+                        border: `1px solid ${reminderHours === hours ? "var(--accent)" : "var(--line-strong)"}`,
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                className="w-full text-sm py-1.5 rounded-lg transition-colors"
+                style={{
+                  border: "1px solid var(--line-strong)",
+                  color: "var(--ink-secondary)",
+                  backgroundColor: "transparent",
+                }}
+                onClick={handleGenerateReminderAI}
+                disabled={generatingReminder}
+              >
+                {generatingReminder ? "generating…" : "✨ generate with ai"}
+              </button>
+
+              <Textarea
+                value={reminderMsg}
+                onChange={(e) => setReminderMsg(e.target.value)}
+                rows={4}
+                placeholder="write a reminder message…"
+              />
+
+              {!studentPhone && (
+                <p className="text-xs" style={{ color: "var(--danger)" }}>
+                  no phone number — add one to send sms
+                </p>
+              )}
             </div>
+          </div>
+
+          {/* Sticky footer */}
+          <div
+            style={{
+              padding: "14px 24px 20px",
+              borderTop: "1px solid var(--line-strong)",
+              backgroundColor: "var(--bg-canvas)",
+            }}
+          >
+            <button
+              className="w-full py-2.5 rounded-xl text-base font-medium transition-colors disabled:opacity-50"
+              style={{ backgroundColor: "var(--accent)", color: "#fff" }}
+              onClick={handleSendReminder}
+              disabled={sendingReminder || !reminderMsg}
+            >
+              {reminderSent ? "sent!" : sendingReminder ? "sending…" : "send sms"}
+            </button>
           </div>
         </DialogContent>
       </Dialog>

@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { exportLessonNotesToPDF } from "@/lib/pdf-export";
 import type { Lesson } from "@/lib/types";
 
@@ -24,14 +23,17 @@ export default function StudentDetailClient({
   return (
     <>
       {lessonsWithNotes.length > 0 && (
-        <Button
+        <button
           onClick={handleExportPDF}
-          variant="outline"
-          size="sm"
-          className="mb-4"
+          className="text-sm mb-4 transition-colors"
+          style={{
+            color: "var(--ink-secondary)",
+            textDecoration: "underline",
+            textUnderlineOffset: "3px",
+          }}
         >
-          📥 Export Notes to PDF
-        </Button>
+          export notes to pdf
+        </button>
       )}
     </>
   );

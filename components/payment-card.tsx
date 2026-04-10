@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import type { Payment } from "@/lib/types";
 
 interface PaymentCardProps {
@@ -64,57 +62,95 @@ export default function PaymentCard({
   }
 
   return (
-    <div className="border rounded-lg p-4">
+    <div
+      className="rounded-xl px-4 py-3.5"
+      style={{
+        backgroundColor: "var(--bg-surface)",
+        border: `1px solid ${payment.status === "pending" ? "var(--accent)" : "var(--line-subtle)"}`,
+        borderLeftWidth: payment.status === "pending" ? "3px" : "1px",
+        boxShadow: "var(--shadow-card)",
+      }}
+    >
       <div className="flex justify-between items-start">
         <div>
           {showStudent && payment.student && (
-            <p className="font-semibold">{payment.student.name}</p>
+            <p className="font-semibold text-sm" style={{ color: "var(--ink-primary)" }}>
+              {payment.student.name}
+            </p>
           )}
-          <p className="text-lg font-bold">${Number(payment.amount).toFixed(2)}</p>
-          <p className="text-sm text-gray-500">
+          <p
+            className="text-lg font-bold font-display-numerals"
+            style={{ color: "var(--ink-primary)" }}
+          >
+            ${Number(payment.amount).toFixed(2)}
+          </p>
+          <p className="text-xs" style={{ color: "var(--ink-tertiary)" }}>
             {payment.lesson_count_covered} lessons
           </p>
           {payment.paid_at && (
-            <p className="text-xs text-gray-400">
-              Paid{" "}
-              {new Date(payment.paid_at).toLocaleDateString()}
+            <p className="text-xs" style={{ color: "var(--ink-tertiary)" }}>
+              paid {new Date(payment.paid_at).toLocaleDateString()}
             </p>
           )}
         </div>
-        <Badge
-          variant={payment.status === "pending" ? "destructive" : "secondary"}
+        <span
+          className="text-xs font-medium px-2 py-0.5 rounded-full"
+          style={{
+            backgroundColor:
+              payment.status === "pending" ? "var(--accent-soft)" : "var(--bg-muted)",
+            color:
+              payment.status === "pending" ? "var(--accent-ink)" : "var(--ink-secondary)",
+          }}
         >
           {payment.status}
-        </Badge>
+        </span>
       </div>
 
       {payment.status === "pending" && (
         <div className="flex gap-2 mt-3">
-          <Button size="sm" onClick={handleMarkPaid} disabled={loading}>
-            Mark Paid
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
+          <button
+            onClick={handleMarkPaid}
+            disabled={loading}
+            className="text-sm font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+            style={{ backgroundColor: "var(--success)", color: "#fff" }}
+          >
+            mark paid
+          </button>
+          <button
             onClick={handleGenerateReminder}
             disabled={loading}
+            className="text-sm px-3 py-1.5 rounded-lg transition-colors"
+            style={{
+              border: "1px solid var(--line-strong)",
+              color: "var(--ink-secondary)",
+              backgroundColor: "transparent",
+            }}
           >
-            Generate Reminder
-          </Button>
+            generate reminder
+          </button>
         </div>
       )}
 
       {reminderDraft && (
-        <div className="mt-3 bg-gray-50 p-3 rounded text-sm">
+        <div
+          className="mt-3 rounded-lg p-3 text-sm"
+          style={{
+            backgroundColor: "var(--bg-muted)",
+            color: "var(--ink-secondary)",
+          }}
+        >
           <p>{reminderDraft}</p>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="mt-2"
+          <button
+            className="mt-2 text-xs transition-colors"
+            style={{
+              color: "var(--accent)",
+              textDecoration: "underline",
+              textUnderlineOffset: "3px",
+            }}
             onClick={handleCopy}
           >
-            {copied ? "Copied!" : "Copy Message"}
-          </Button>
+            {copied ? "copied!" : "copy message"}
+          </button>
         </div>
       )}
     </div>

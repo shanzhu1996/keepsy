@@ -31,6 +31,7 @@ export interface Student {
   lessons_since_last_payment: number;
   is_active: boolean;
   notes: string | null;
+  display_order: number;
   created_at: string;
 }
 

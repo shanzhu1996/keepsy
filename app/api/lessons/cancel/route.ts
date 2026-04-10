@@ -4,7 +4,7 @@ import { incrementLessonCountAndCheckPayment } from "@/lib/billing";
 
 export async function POST(request: Request) {
   try {
-    const { lessonId, chargeForLesson } = await request.json();
+    const { lessonId, chargeForLesson, scope = "this" } = await request.json();
     const supabase = await createClient();
 
     const {
@@ -28,23 +28,39 @@ export async function POST(request: Request) {
       );
     }
 
-    if (lesson.status === "cancelled") {
-      return NextResponse.json({ success: true, lesson });
+    // Build the list of lesson IDs to cancel
+    let lessonIds: string[] = [lessonId];
+
+    if (
+      scope === "future" &&
+      lesson.recurrence_group_id
+    ) {
+      // Cancel this lesson + all future lessons in the same recurrence group
+      const { data: futureLessons } = await supabase
+        .from("lessons")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("recurrence_group_id", lesson.recurrence_group_id)
+        .eq("status", "scheduled")
+        .gte("scheduled_at", lesson.scheduled_at);
+
+      if (futureLessons && futureLessons.length > 0) {
+        lessonIds = futureLessons.map((l) => l.id);
+      }
     }
 
-    const { data: updated, error: updateErr } = await supabase
+    // Cancel all targeted lessons
+    const { error: updateErr } = await supabase
       .from("lessons")
       .update({
         status: "cancelled",
         cancelled_counts_as_completed: !!chargeForLesson,
       })
-      .eq("id", lessonId)
-      .select()
-      .single();
+      .in("id", lessonIds);
 
     if (updateErr) throw updateErr;
 
-    // If charging, treat like a completed lesson for billing
+    // If charging, treat like a completed lesson for billing (only for the single lesson)
     let payment = null;
     if (chargeForLesson) {
       payment = await incrementLessonCountAndCheckPayment(
@@ -56,7 +72,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      lesson: updated,
+      cancelledCount: lessonIds.length,
       paymentCreated: !!payment,
     });
   } catch (err) {
