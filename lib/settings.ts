@@ -6,7 +6,6 @@ export interface TeacherProfile {
   name: string | null;
   email: string | null;
   default_duration_min: number;
-  default_hourly_rate: number | null;
   default_cycle_lessons: number | null;
   default_cycle_price: number | null;
   timezone: string;
