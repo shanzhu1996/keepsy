@@ -322,6 +322,9 @@ export default function VoiceCapture({
             <p className="text-xs" style={{ color: "var(--ink-tertiary)" }}>
               talk naturally — 30 seconds is plenty
             </p>
+            <p className="text-[10px] mt-1" style={{ color: "var(--ink-tertiary)", opacity: 0.6 }}>
+              voice is processed by your browser and not stored
+            </p>
           </>
         )}
       </div>

@@ -310,13 +310,19 @@ export default function AddLessonDialog({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!activeStudentId) return;
+
+    const dateTime = new Date(`${date}T${time}:00`).toISOString();
+
+    // Warn if scheduling in the past
+    if (new Date(dateTime) < new Date() && !confirm("This lesson is in the past. Add anyway?")) {
+      return;
+    }
+
     setSaving(true);
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
-
-      const dateTime = new Date(`${date}T${time}:00`).toISOString();
 
       if (isRecurring) {
         const startDate = new Date(dateTime);

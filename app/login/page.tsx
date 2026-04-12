@@ -218,18 +218,40 @@ export default function LoginPage() {
             . click it to get started.
           </p>
 
-          <button
-            type="button"
-            onClick={() => {
-              setCheckEmail(false);
-              setMode("login");
-              setPassword("");
-            }}
-            className="text-[13px] font-medium keepsy-rise keepsy-rise-4"
-            style={{ color: "var(--accent)" }}
-          >
-            back to log in
-          </button>
+          <div className="flex items-center justify-center gap-4 keepsy-rise keepsy-rise-4">
+            <button
+              type="button"
+              onClick={async () => {
+                setLoading(true);
+                await supabase.auth.resend({ type: "signup", email });
+                setLoading(false);
+                setError("confirmation email resent!");
+              }}
+              disabled={loading}
+              className="text-[13px] font-medium"
+              style={{ color: "var(--accent)" }}
+            >
+              {loading ? "sending..." : "resend email"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setCheckEmail(false);
+                setMode("login");
+                setPassword("");
+                setError("");
+              }}
+              className="text-[13px]"
+              style={{ color: "var(--ink-tertiary)" }}
+            >
+              back to log in
+            </button>
+          </div>
+          {error && (
+            <p className="text-[12px] mt-3" style={{ color: "var(--success)" }}>
+              {error}
+            </p>
+          )}
         </div>
       </div>
     );
