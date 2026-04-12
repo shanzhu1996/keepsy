@@ -914,23 +914,22 @@ export default function AddLessonDialog({
                     setRecurrenceRule("weekly");
                     setRecurrenceCount(defaultCount);
                   }}
-                  className="transition-colors w-full"
+                  className="transition-colors"
                   style={{
-                    display: "flex",
+                    display: "inline-flex",
                     alignItems: "center",
-                    justifyContent: "center",
                     gap: "6px",
-                    padding: "10px 16px",
-                    backgroundColor: "var(--accent-soft)",
-                    border: "1px solid rgba(165, 82, 42, 0.14)",
-                    borderRadius: "var(--radius)",
-                    fontSize: "14px",
+                    padding: "7px 14px",
+                    backgroundColor: "transparent",
+                    border: "1px dashed var(--line-strong)",
+                    borderRadius: "var(--radius-chip)",
+                    fontSize: "13px",
                     fontWeight: 500,
-                    color: "var(--accent-ink)",
+                    color: "var(--ink-secondary)",
                     cursor: "pointer",
                   }}
                 >
-                  <span style={{ fontSize: "15px", lineHeight: 1 }}>↻</span>
+                  <span style={{ fontSize: "14px", lineHeight: 1 }}>↻</span>
                   make it recurring
                 </button>
               ) : (
