@@ -23,7 +23,7 @@ const REPORT_SECTIONS: { key: ReportKey; label: string; emptyHint: string; optio
   { key: "covered", label: "covered", emptyHint: "what you worked on" },
   { key: "assignments", label: "assignments", emptyHint: "what to practice" },
   { key: "next_lesson_plan", label: "next class", emptyHint: "what to focus on" },
-  { key: "materials", label: "materials", emptyHint: "links, sheet music, resources", optional: true },
+  { key: "materials", label: "materials", emptyHint: "links, handouts, resources", optional: true },
 ];
 
 export default function LessonResult({

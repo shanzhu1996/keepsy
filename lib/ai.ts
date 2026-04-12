@@ -16,13 +16,13 @@ export async function generateFromTranscript(
     messages: [
       {
         role: "system",
-        content: `You are an assistant for a private music teacher. The teacher just finished a lesson with ${firstName} and spoke (or typed) freely about what happened. Write BOTH outputs in ${language}. From that input, produce TWO outputs:
+        content: `You are an assistant for a private instructor who teaches 1-on-1 lessons (could be music, sports coaching, tutoring, swimming, or any subject). The teacher just finished a lesson with ${firstName} and spoke (or typed) freely about what happened. Write BOTH outputs in ${language}. From that input, produce TWO outputs:
 
 1. "student_message" — a short, warm, encouraging message addressed directly to ${firstName} (or their parent). 2-3 sentences, friendly tone, ready to send as a text. No bullet points. Do not sign off with a name.
 
 2. "lesson_report" — a structured teacher report with five sections. Each section is an ARRAY of concise bullet strings. Keep the teacher's natural voice — casual, specific, no corporate fluff. Each section should have at most 1–3 bullets. Use empty arrays when a section doesn't apply — never invent content.
-   - "covered": key topics, pieces, or techniques worked on (e.g. "C major scale", "Fur Elise bars 1-16").
-   - "teacher_notes": the teacher's quick personal recap — what actually happened, how it went, what stood out. Write like a sticky note to yourself: "went over C major and A minor, picked up new keys quickly" or "struggled with left hand timing, needs more slow practice". Keep the teacher's words, don't over-polish or generalize. Never write generic praise like "showed improvement" — be specific.
+   - "covered": key topics, skills, or techniques worked on (e.g. "freestyle breathing drills", "quadratic equations", "C major scale").
+   - "teacher_notes": the teacher's quick personal recap — what actually happened, how it went, what stood out. Write like a sticky note to yourself: "worked on breathing technique, picked it up quickly" or "struggled with timing, needs more slow practice". Keep the teacher's words, don't over-polish or generalize. Never write generic praise like "showed improvement" — be specific.
    - "assignments": clear practice tasks for before next lesson. Each ≤12 words.
    - "next_lesson_plan": what to focus on next time.
    - "materials": resources, links, or references mentioned (optional; empty array if none).
@@ -146,7 +146,7 @@ export async function generatePaymentReminder(
     messages: [
       {
         role: "system",
-        content: `You are an assistant for a private music teacher. Generate a polite, friendly payment reminder message. Keep it brief (2-3 sentences). Don't be pushy. Include the amount and number of lessons covered.`,
+        content: `You are an assistant for a private instructor. Generate a polite, friendly payment reminder message. Keep it brief (2-3 sentences). Don't be pushy. Include the amount and number of lessons covered.`,
       },
       {
         role: "user",
@@ -181,7 +181,7 @@ export async function generateLessonReminder(
     messages: [
       {
         role: "system",
-        content: `You are an assistant for a private music teacher. Generate a brief, friendly lesson reminder message (1-2 sentences). Include the day, time, and duration if available.`,
+        content: `You are an assistant for a private instructor. Generate a brief, friendly lesson reminder message (1-2 sentences). Include the day, time, and duration if available.`,
       },
       {
         role: "user",
@@ -216,7 +216,7 @@ export async function generateRescheduleMessage(
     messages: [
       {
         role: "system",
-        content: `You are an assistant for a private music teacher. Generate a brief, professional cancellation/reschedule message (2-3 sentences). Be apologetic and suggest rescheduling.`,
+        content: `You are an assistant for a private instructor. Generate a brief, professional cancellation/reschedule message (2-3 sentences). Be apologetic and suggest rescheduling.`,
       },
       {
         role: "user",

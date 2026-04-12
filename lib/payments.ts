@@ -8,7 +8,7 @@ export interface ActiveCycle {
   cycleLength: number;
   lessonsCompleted: number;
   isComplete: boolean;
-  status: "overdue" | "pending"; // overdue = started but not paid; pending = not started, not paid
+  status: "overdue" | "in_progress"; // overdue = full cycle done, not paid; in_progress = partial cycle, not yet due
   amountDue: number;
   cycleStartDate: string | null;
   cycleEndDate: string | null;
@@ -64,15 +64,15 @@ export async function getActiveCycles(): Promise<ActiveCycle[]> {
     const unpaidCompleteCycles = Math.max(0, completedCycles - paidCount);
     const hasCurrentCyclePaid = paidCount > completedCycles;
 
-    const isOverdue =
-      unpaidCompleteCycles > 0 || (currentCycleProgress > 0 && !hasCurrentCyclePaid);
+    const isOverdue = unpaidCompleteCycles > 0;
+    const isInProgress = currentCycleProgress > 0 && !hasCurrentCyclePaid;
 
     // Up to date and no progress → skip
-    if (!isOverdue && currentCycleProgress === 0 && paidCount === 0) continue;
+    if (!isOverdue && !isInProgress && currentCycleProgress === 0 && paidCount === 0) continue;
     // Paid and no new cycle progress → skip
-    if (!isOverdue && paidCount > 0 && currentCycleProgress === 0) continue;
+    if (!isOverdue && !isInProgress && paidCount > 0 && currentCycleProgress === 0) continue;
 
-    const status: "overdue" | "pending" = isOverdue ? "overdue" : "pending";
+    const status: "overdue" | "in_progress" = isOverdue ? "overdue" : "in_progress";
 
     let lessonsCompleted: number;
     let isComplete: boolean;
@@ -152,6 +152,47 @@ export async function getPaymentsForStudent(
 
   if (error) throw error;
   return data ?? [];
+}
+
+export interface MonthlySummary {
+  month: string; // "YYYY-MM"
+  label: string; // "April 2026"
+  total: number;
+}
+
+/** Returns monthly income totals for the last 12 months, most recent first. */
+export async function getMonthlyIncomeSummary(): Promise<MonthlySummary[]> {
+  const supabase = await createClient();
+  const now = new Date();
+  const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+
+  const { data, error } = await supabase
+    .from("payments")
+    .select("amount, paid_at")
+    .eq("status", "paid")
+    .gte("paid_at", twelveMonthsAgo.toISOString())
+    .order("paid_at", { ascending: false });
+
+  if (error) throw error;
+
+  const byMonth = new Map<string, number>();
+
+  for (const p of data ?? []) {
+    const d = new Date(p.paid_at);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    byMonth.set(key, (byMonth.get(key) ?? 0) + parseFloat(String(p.amount)));
+  }
+
+  // Build list for last 12 months (include months with $0)
+  const result: MonthlySummary[] = [];
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const label = d.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+    result.push({ month: key, label, total: byMonth.get(key) ?? 0 });
+  }
+
+  return result;
 }
 
 export async function getMonthlyIncome(): Promise<number> {

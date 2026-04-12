@@ -334,7 +334,7 @@ export default function LessonCapture({
                         setHasStarted(true);
                       }
                     }}
-                    placeholder={`e.g. "Worked on Fur Elise bars 1-16. Right hand solid, left hand needs practice. Assigned hands-separate work for next week."`}
+                    placeholder={`e.g. "Worked on freestyle breathing drills. Timing much better today. Assigned 3x20m sets focusing on bilateral breathing for next week."`}
                     className="w-full min-h-[120px] max-h-[40vh] text-base leading-relaxed"
                     style={{
                       backgroundColor: "var(--bg-surface)",

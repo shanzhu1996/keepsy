@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import type { Payment } from "@/lib/types";
 
 interface PaymentCardProps {
@@ -15,11 +16,13 @@ export default function PaymentCard({
 }: PaymentCardProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [reminderDraft, setReminderDraft] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   async function handleMarkPaid() {
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch("/api/payments/mark-paid", {
         method: "POST",
@@ -29,7 +32,7 @@ export default function PaymentCard({
       if (!res.ok) throw new Error("Failed");
       router.refresh();
     } catch {
-      alert("Failed to mark as paid");
+      setError("Couldn't mark as paid");
     } finally {
       setLoading(false);
     }
@@ -37,6 +40,7 @@ export default function PaymentCard({
 
   async function handleGenerateReminder() {
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch("/api/messages/payment-reminder", {
         method: "POST",
@@ -47,7 +51,7 @@ export default function PaymentCard({
       const data = await res.json();
       setReminderDraft(data.message);
     } catch {
-      alert("Failed to generate reminder");
+      setError("Couldn't generate reminder");
     } finally {
       setLoading(false);
     }
@@ -74,9 +78,17 @@ export default function PaymentCard({
       <div className="flex justify-between items-start">
         <div>
           {showStudent && payment.student && (
-            <p className="font-semibold text-sm" style={{ color: "var(--ink-primary)" }}>
+            <Link
+              href={`/students/${payment.student_id}`}
+              className="font-semibold text-sm hover:underline block"
+              style={{
+                color: "var(--ink-primary)",
+                textUnderlineOffset: "3px",
+                textDecorationThickness: "1px",
+              }}
+            >
               {payment.student.name}
-            </p>
+            </Link>
           )}
           <p
             className="text-lg font-bold font-display-numerals"
@@ -152,6 +164,12 @@ export default function PaymentCard({
             {copied ? "copied!" : "copy message"}
           </button>
         </div>
+      )}
+
+      {error && (
+        <p className="text-[12px] mt-2" style={{ color: "var(--danger)" }}>
+          {error}
+        </p>
       )}
     </div>
   );
