@@ -43,7 +43,7 @@ export default function StudentMessagingClient({
   };
 
   async function openReminderDialog() {
-    setReminderMsg(`Hi ${studentName}! Just a reminder about your lesson tomorrow at ${nextLessonTime}. See you then!`);
+    setReminderMsg(`Hi ${studentName}! Just a reminder about your lesson on ${nextLessonTime}. See you then!`);
     setReminderSent(false);
     setShowReminderDialog(true);
   }

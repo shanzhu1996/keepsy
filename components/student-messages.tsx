@@ -151,7 +151,7 @@ export default function StudentMessages({
     // Extract just the time (e.g. "7:00 PM") from the full date string
     const timePart = nextLessonTime?.match(/\d{1,2}:\d{2}\s*[AP]M/i)?.[0];
     const whenPart = nextLessonTime
-      ? ` tomorrow at ${timePart || nextLessonTime}`
+      ? ` on ${nextLessonTime}`
       : "";
     const amountPart = amountDue ? ` of $${amountDue}` : "";
 

@@ -116,7 +116,9 @@ export async function sendLessonReminders(hoursBeforeLesson = 24) {
     const { time, isToday } = formatLessonTime(lesson.scheduled_at, tz);
     const firstName = student.name?.split(" ")[0] || student.name;
 
-    const message = `Hi ${firstName}! Just a reminder about your lesson ${isToday ? "today" : "tomorrow"} at ${time}. See you then!`;
+    const { time: fmtTime, day: fmtDay, isToday: fmtIsToday } = formatLessonTime(lesson.scheduled_at, tz);
+    // Auto cron runs 24h before, so today/tomorrow is accurate
+    const message = `Hi ${firstName}! Just a reminder about your lesson ${fmtIsToday ? "today" : "tomorrow"} at ${fmtTime}. See you then!`;
 
     const contactMethod = student.contact_method || "sms";
     let actuallySent = false;
@@ -228,10 +230,12 @@ export async function sendLessonRemindersForUser(
     const student = lesson.student;
     if (!student) continue;
 
-    const { time, isToday } = formatLessonTime(lesson.scheduled_at, tz);
+    const { time, day, isToday } = formatLessonTime(lesson.scheduled_at, tz);
     const firstName = student.name?.split(" ")[0] || student.name;
 
-    const message = `Hi ${firstName}! Just a reminder about your lesson ${isToday ? "today" : "tomorrow"} at ${time}. See you then!`;
+    // Manual trigger — use actual date since teacher may send days ahead
+    const dateStr = isToday ? "today" : `on ${day}`;
+    const message = `Hi ${firstName}! Just a reminder about your lesson ${dateStr} at ${time}. See you then!`;
 
     const contactMethod = student.contact_method || "sms";
     let actuallySent = false;

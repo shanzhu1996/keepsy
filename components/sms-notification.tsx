@@ -34,7 +34,7 @@ export default function SMSNotification({
   const [sent, setSent] = useState(false);
 
   const defaultTemplates: Record<string, string> = {
-    lesson_reminder: `Hi ${studentName}! Just a reminder about your lesson tomorrow at ${lessonTime}. See you then!`,
+    lesson_reminder: `Hi ${studentName}! Just a reminder about your lesson on ${lessonTime}. See you then!`,
     payment_reminder: `Hi ${studentName}! Your payment of $${amount} for your last lessons is due. Let me know if you have any questions!`,
     custom: "",
   };
