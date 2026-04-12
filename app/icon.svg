@@ -1,14 +1,5 @@
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Warm parchment rounded-square background -->
-  <rect width="512" height="512" rx="112" fill="#F4EDE0"/>
-
-  <!-- Terracotta "k" — custom letterform with rounded ends -->
-  <!-- Vertical stem -->
-  <rect x="158" y="100" width="44" height="312" rx="22" fill="#A5522A"/>
-
-  <!-- Upper diagonal arm -->
-  <rect x="188" y="142" width="44" height="180" rx="22" fill="#A5522A" transform="rotate(-40 280 180)"/>
-
-  <!-- Lower diagonal leg -->
-  <rect x="188" y="262" width="44" height="180" rx="22" fill="#A5522A" transform="rotate(40 240 340)"/>
+  <rect width="512" height="512" rx="112" fill="#A25028"/>
+  <text x="218" y="388" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="350" fill="#FDF6EE">k</text>
+  <circle cx="362" cy="370" r="16" fill="#FDF6EE"/>
 </svg>
