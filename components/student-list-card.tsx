@@ -19,15 +19,18 @@ interface StudentListCardProps {
     billing_enabled: boolean;
     billing_cycle_lessons: number | null;
     lessons_since_last_payment: number;
+    cycle_lessons_offset?: number;
   };
   nextLessonLabel?: string;
   needsPayment: boolean;
+  completedCount: number;
 }
 
 export default function StudentListCard({
   student,
   nextLessonLabel,
   needsPayment,
+  completedCount,
 }: StudentListCardProps) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -177,33 +180,38 @@ export default function StudentListCard({
                 </p>
               )}
 
-              {student.billing_enabled && student.billing_cycle_lessons && (
-                <div className="flex items-center gap-2 mt-1">
-                  <div className="flex gap-1">
-                    {Array.from(
-                      { length: student.billing_cycle_lessons },
-                      (_, i) => (
-                        <span
-                          key={i}
-                          className="rounded-full"
-                          style={{
-                            width: "7px",
-                            height: "7px",
-                            backgroundColor:
-                              i < student.lessons_since_last_payment
-                                ? "var(--accent)"
-                                : "var(--line-strong)",
-                          }}
-                        />
-                      )
-                    )}
+              {student.billing_enabled && student.billing_cycle_lessons && (() => {
+                const offset = student.cycle_lessons_offset ?? 0;
+                const total = completedCount + offset;
+                const cycleProgress = total % student.billing_cycle_lessons;
+                return (
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="flex gap-1">
+                      {Array.from(
+                        { length: student.billing_cycle_lessons },
+                        (_, i) => (
+                          <span
+                            key={i}
+                            className="rounded-full"
+                            style={{
+                              width: "7px",
+                              height: "7px",
+                              backgroundColor:
+                                i < cycleProgress
+                                  ? "var(--accent)"
+                                  : "var(--line-strong)",
+                            }}
+                          />
+                        )
+                      )}
+                    </div>
+                    <span className="text-xs" style={{ color: "var(--ink-tertiary)" }}>
+                      {cycleProgress} of{" "}
+                      {student.billing_cycle_lessons} lessons
+                    </span>
                   </div>
-                  <span className="text-xs" style={{ color: "var(--ink-tertiary)" }}>
-                    {student.lessons_since_last_payment} of{" "}
-                    {student.billing_cycle_lessons} lessons
-                  </span>
-                </div>
-              )}
+                );
+              })()}
             </div>
 
             {/* Overflow menu */}

@@ -8,6 +8,7 @@ interface VoiceCaptureProps {
   lang?: string;
   onComplete: (transcript: string) => void;
   onStartOver?: () => void;
+  onRecordingStart?: () => void;
 }
 
 interface SRResult {
@@ -37,6 +38,7 @@ export default function VoiceCapture({
   lang = "en-US",
   onComplete,
   onStartOver,
+  onRecordingStart,
 }: VoiceCaptureProps) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [finalText, setFinalText] = useState("");
@@ -113,6 +115,7 @@ export default function VoiceCapture({
     if (!recRef.current) return;
     stoppedRef.current = false;
     setPhase("recording");
+    onRecordingStart?.();
     try {
       recRef.current.start();
     } catch {
@@ -159,7 +162,7 @@ export default function VoiceCapture({
   if (!supported) {
     return (
       <div className="text-center p-6">
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm" style={{ color: "var(--ink-secondary)" }}>
           Voice capture isn&apos;t supported in this browser. Switch to Type mode.
         </p>
       </div>
@@ -172,37 +175,42 @@ export default function VoiceCapture({
     <div className="flex flex-col h-full min-h-0 w-full">
       <div
         ref={transcriptRef}
-        className="flex-1 min-h-0 overflow-y-auto px-4 pt-6 pb-4 w-full max-w-lg mx-auto"
+        className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 w-full max-w-lg mx-auto"
       >
-        {!finalText && !interim && (
-          <p className="text-center text-sm text-gray-500 leading-relaxed mb-8">
-            What you worked on · how it went · what&apos;s next
-          </p>
-        )}
-        <div className="flex gap-1.5 items-end h-8 justify-center mb-6" aria-hidden>
-          {[0, 1, 2, 3, 4].map((i) => (
-            <span
-              key={i}
-              className="inline-block w-1.5 rounded-full bg-[var(--accent)]"
-              style={{
-                height: `${12 + ((i * 7) % 18)}px`,
-                animation: isRecording
-                  ? `keepsy-pulse 1.1s ease-in-out ${i * 0.12}s infinite`
-                  : "none",
-                opacity: isRecording ? 1 : 0.3,
-              }}
-            />
-          ))}
-        </div>
         {isRecording ? (
-          <p className="text-base text-gray-800 leading-relaxed whitespace-pre-wrap text-center">
-            {finalText}
-            {interim && <span className="text-gray-400"> {interim}</span>}
-          </p>
+          /* ─── Recording state ─── */
+          <>
+            {/* Waveform visualizer */}
+            <div className="flex gap-[7px] items-end h-10 justify-center mt-6 mb-5" aria-hidden>
+              {[0, 1, 2, 3, 4].map((i) => (
+                <span
+                  key={i}
+                  className="inline-block w-[5px] rounded-full bg-[var(--accent)]"
+                  style={{
+                    height: `${14 + ((i * 7) % 20)}px`,
+                    animation: `keepsy-pulse 1.1s ease-in-out ${i * 0.12}s infinite`,
+                  }}
+                />
+              ))}
+            </div>
+            <p
+              className="text-base leading-relaxed whitespace-pre-wrap text-center"
+              style={{ color: "var(--ink-primary)" }}
+            >
+              {finalText}
+              {interim && (
+                <span style={{ color: "var(--ink-tertiary)" }}> {interim}</span>
+              )}
+            </p>
+          </>
         ) : finalText ? (
-          <div className="w-full">
-            <p className="text-[11px] uppercase tracking-wide text-gray-400 mb-2 text-center">
-              Review — edit any mistakes
+          /* ─── Post-recording review ─── */
+          <div className="w-full pt-6">
+            <p
+              className="text-[11px] uppercase tracking-wide mb-2 text-center"
+              style={{ color: "var(--ink-tertiary)", letterSpacing: "0.06em" }}
+            >
+              review your notes
             </p>
             <textarea
               value={finalText}
@@ -210,12 +218,18 @@ export default function VoiceCapture({
                 setFinalText(e.target.value);
                 finalTextRef.current = e.target.value;
               }}
-              className="w-full min-h-[200px] text-base leading-relaxed text-gray-800 bg-white rounded-lg border border-amber-200 p-3 outline-none focus:border-amber-400"
+              className="w-full min-h-[200px] text-base leading-relaxed rounded-lg p-3 outline-none"
+              style={{
+                backgroundColor: "var(--bg-surface)",
+                color: "var(--ink-primary)",
+                border: "1px solid var(--line-strong)",
+              }}
             />
           </div>
         ) : null}
       </div>
 
+      {/* Bottom actions */}
       <div
         className="shrink-0 bg-[var(--bg-canvas)] flex flex-col items-center gap-2 w-full max-w-lg mx-auto px-4 py-4"
         style={{ borderTop: "1px solid var(--line-subtle)" }}
@@ -235,7 +249,9 @@ export default function VoiceCapture({
             >
               ■ Stop
             </Button>
-            <p className="text-xs text-gray-500">listening…</p>
+            <p className="text-xs" style={{ color: "var(--ink-tertiary)" }}>
+              listening…
+            </p>
           </>
         ) : finalText ? (
           <>
@@ -253,27 +269,43 @@ export default function VoiceCapture({
                 if (text) onComplete(text);
               }}
             >
-              Generate ✨
+              write the report
             </Button>
             <div className="flex gap-4">
               <button
                 type="button"
                 onClick={handleStart}
-                className="text-xs text-amber-700"
+                className="text-xs"
+                style={{ color: "var(--accent-ink)" }}
               >
-                + Continue recording
+                + continue recording
               </button>
               <button
                 type="button"
                 onClick={handleStartOver}
-                className="text-xs text-gray-400 hover:text-gray-600"
+                className="text-xs transition-colors"
+                style={{ color: "var(--ink-tertiary)" }}
               >
-                Start over
+                start over
               </button>
             </div>
           </>
         ) : (
           <>
+            {/* Waveform above button in idle state */}
+            <div className="flex gap-[7px] items-end h-10 justify-center mb-4" aria-hidden>
+              {[0, 1, 2, 3, 4].map((i) => (
+                <span
+                  key={i}
+                  className="inline-block w-[5px] rounded-full bg-[var(--accent)]"
+                  style={{
+                    height: `${14 + ((i * 7) % 20)}px`,
+                    animation: `keepsy-idle-pulse 2.4s ease-in-out ${i * 0.18}s infinite`,
+                    opacity: 0.55,
+                  }}
+                />
+              ))}
+            </div>
             <Button
               size="lg"
               className="w-full h-12 text-[15px] font-semibold"
@@ -285,9 +317,11 @@ export default function VoiceCapture({
               }}
               onClick={handleStart}
             >
-              🎙 Start recording
+              start recording
             </Button>
-            <p className="text-xs text-gray-500">tap when ready</p>
+            <p className="text-xs" style={{ color: "var(--ink-tertiary)" }}>
+              talk naturally — 30 seconds is plenty
+            </p>
           </>
         )}
       </div>
@@ -296,6 +330,10 @@ export default function VoiceCapture({
         @keyframes keepsy-pulse {
           0%, 100% { transform: scaleY(0.6); opacity: 0.5; }
           50% { transform: scaleY(1.4); opacity: 1; }
+        }
+        @keyframes keepsy-idle-pulse {
+          0%, 100% { transform: scaleY(1); opacity: 0.45; }
+          50% { transform: scaleY(1.15); opacity: 0.65; }
         }
       `}</style>
 

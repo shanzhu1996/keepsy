@@ -95,7 +95,13 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50"
+      style={{
+        backgroundColor: "var(--bg-canvas)",
+        borderTop: "1px solid var(--line-subtle)",
+      }}
+    >
       <div className="flex justify-around items-center h-16 max-w-md mx-auto">
         {tabs.map((tab) => {
           const active = pathname.startsWith(tab.href);
@@ -103,11 +109,10 @@ export default function BottomNav() {
             <Link
               key={tab.href}
               href={tab.href}
-              className={`flex flex-col items-center gap-1 px-3 py-2 text-xs font-medium transition-colors ${
-                active
-                  ? "text-blue-600"
-                  : "text-gray-500 hover:text-gray-900"
-              }`}
+              className="flex flex-col items-center gap-1 px-3 py-2 text-xs font-medium transition-colors"
+              style={{
+                color: active ? "var(--accent)" : "var(--ink-tertiary)",
+              }}
             >
               <tab.icon active={active} />
               {tab.label}

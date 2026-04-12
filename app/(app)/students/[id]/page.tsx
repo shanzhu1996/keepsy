@@ -3,11 +3,14 @@ import Link from "next/link";
 import { getStudent } from "@/lib/students";
 import { getLessonsForStudent } from "@/lib/lessons";
 import { getPaymentsForStudent } from "@/lib/payments";
-import LessonCard from "@/components/lesson-card";
-import PaymentCard from "@/components/payment-card";
-import StudentDetailClient from "@/components/student-detail-client";
-import StudentMessagingClient from "@/components/student-messaging-client";
+import { getMessagesForStudent } from "@/lib/messages";
+import { getProfile } from "@/lib/settings";
 import StudentPaymentBanner from "@/components/student-payment-banner";
+import StudentLessons from "@/components/student-lessons";
+import StudentMessages from "@/components/student-messages";
+import StudentPayments from "@/components/student-payments";
+import AddLessonButton from "@/components/add-lesson-button";
+import StudentProgressSummary from "@/components/student-progress-summary";
 
 export default async function StudentDetailPage({
   params,
@@ -18,10 +21,14 @@ export default async function StudentDetailPage({
   const student = await getStudent(id);
   if (!student) notFound();
 
-  const [lessons, payments] = await Promise.all([
+  const [lessons, payments, messageLogs, profile] = await Promise.all([
     getLessonsForStudent(id),
     getPaymentsForStudent(id),
+    getMessagesForStudent(id),
+    getProfile(),
   ]);
+
+  const teacherFirstName = profile?.name?.split(" ")[0] || null;
 
   // Find the next upcoming lesson
   const now = new Date();
@@ -43,11 +50,14 @@ export default async function StudentDetailPage({
     .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
 
   const paidCount = payments.filter((p) => p.status === "paid").length;
-  const totalCompleted = completedLessons.length;
+  const offset = student.cycle_lessons_offset ?? 0;
+  const totalCompleted = completedLessons.length + offset;
   const completedCycles = cycleLength > 0 ? Math.floor(totalCompleted / cycleLength) : 0;
   const currentCycleProgress = cycleLength > 0 ? totalCompleted % cycleLength : 0;
-  const unpaidCompleteCycles = Math.max(0, completedCycles - paidCount);
-  const hasCurrentCyclePaid = paidCount > completedCycles;
+  // If there's an offset, the first cycle is pre-paid (teacher was already paid before using the app)
+  const prePaidCycles = offset > 0 ? 1 : 0;
+  const unpaidCompleteCycles = Math.max(0, completedCycles - paidCount - prePaidCycles);
+  const hasCurrentCyclePaid = (paidCount + prePaidCycles) > completedCycles;
 
   // Status
   const billingStatus: "overdue" | "paid" | "pending" =
@@ -63,25 +73,51 @@ export default async function StudentDetailPage({
   let isCurrentCycleComplete: boolean;
 
   if (unpaidCompleteCycles > 0) {
-    const startIdx = paidCount * cycleLength;
+    const startIdx = (paidCount + prePaidCycles) * cycleLength - offset;
     lessonsInCurrentCycle = cycleLength;
     isCurrentCycleComplete = true;
-    cycleStartDate = completedLessons[startIdx]?.scheduled_at ?? null;
-    cycleEndDate = completedLessons[startIdx + cycleLength - 1]?.scheduled_at ?? null;
+    cycleStartDate = completedLessons[Math.max(0, startIdx)]?.scheduled_at ?? null;
+    cycleEndDate = completedLessons[Math.max(0, startIdx) + cycleLength - 1]?.scheduled_at ?? null;
   } else {
-    const startIdx = completedCycles * cycleLength;
+    const startIdx = completedCycles * cycleLength - offset;
     lessonsInCurrentCycle = currentCycleProgress;
     isCurrentCycleComplete = false;
-    cycleStartDate = currentCycleProgress > 0 ? completedLessons[startIdx]?.scheduled_at ?? null : null;
+    cycleStartDate = currentCycleProgress > 0 ? completedLessons[Math.max(0, startIdx)]?.scheduled_at ?? null : null;
     cycleEndDate = null;
   }
 
   const amountDue = unpaidCompleteCycles > 0 ? (student.cycle_price ?? 0) : 0;
 
+  // Find last sent message date for preview hint
+  const lastMessage = messageLogs.find((m) => m.sent);
+  const lastMessageHint = lastMessage
+    ? `last ${lastMessage.type === "lesson_reminder" ? "reminder" : lastMessage.type === "payment_reminder" ? "payment" : "sent"} ${new Date(lastMessage.sent_at || lastMessage.created_at).toLocaleDateString([], { month: "short", day: "numeric" })}`
+    : null;
+
+  // Last payment hint for collapsed payments section
+  const lastPaidPayment = payments.find((p) => p.status === "paid");
+  const lastPaymentHint = lastPaidPayment?.paid_at
+    ? `last paid ${new Date(lastPaidPayment.paid_at).toLocaleDateString([], { month: "short", day: "numeric" })}`
+    : null;
+
+  // Count of completed lessons with notes for progress threshold
+  const lessonsWithNotes = completedLessons.filter((l) => l.raw_note).length;
+
   return (
     <div>
-      {/* Student header — clean Fraunces on canvas */}
-      <div className="mb-5 keepsy-rise keepsy-rise-1">
+      {/* ─── Header: name + contact + actions ─── */}
+      <div className="mb-3 keepsy-rise keepsy-rise-1">
+        {/* Back link */}
+        <Link
+          href="/students"
+          className="text-[13px] mb-2 inline-block"
+          style={{
+            color: "var(--ink-secondary)",
+          }}
+        >
+          ‹ students
+        </Link>
+
         <div className="flex justify-between items-start">
           <div>
             <h1
@@ -90,20 +126,33 @@ export default async function StudentDetailPage({
             >
               {student.name.toLowerCase()}
             </h1>
-            {student.email && (
-              <p className="text-sm mt-0.5" style={{ color: "var(--ink-secondary)" }}>
-                {student.email}
-              </p>
-            )}
-            {student.phone && (
-              <p className="text-sm" style={{ color: "var(--ink-secondary)" }}>
-                {student.phone}
-              </p>
+            {(student.email || student.phone) && (
+              <div className="flex items-center gap-1.5 mt-1 flex-wrap" style={{ fontSize: "13px", color: "var(--ink-tertiary)" }}>
+                {student.email && (
+                  <a
+                    href={`mailto:${student.email}`}
+                    className="contact-link"
+                  >
+                    {student.email}
+                  </a>
+                )}
+                {student.email && student.phone && (
+                  <span style={{ color: "var(--ink-tertiary)" }}>·</span>
+                )}
+                {student.phone && (
+                  <a
+                    href={`tel:${student.phone}`}
+                    className="contact-link"
+                  >
+                    {student.phone}
+                  </a>
+                )}
+              </div>
             )}
           </div>
           <Link
             href={`/students/${id}/edit`}
-            className="text-xs font-medium transition-colors"
+            className="text-xs font-medium"
             style={{
               color: "var(--ink-secondary)",
               textDecoration: "underline",
@@ -113,22 +162,19 @@ export default async function StudentDetailPage({
             edit
           </Link>
         </div>
-      </div>
 
-      {student.notes && (
-        <div
-          className="rounded-xl px-3.5 py-3 mb-4 keepsy-rise keepsy-rise-2"
-          style={{
-            backgroundColor: "var(--bg-surface)",
-            border: "1px solid var(--line-subtle)",
-          }}
-        >
-          <p className="text-sm italic" style={{ color: "var(--ink-secondary)" }}>
+        {/* Notes — teacher's personal annotation */}
+        {student.notes && (
+          <p
+            className="font-display text-sm italic mt-3"
+            style={{ color: "var(--ink-tertiary)", lineHeight: 1.5 }}
+          >
             {student.notes}
           </p>
-        </div>
-      )}
+        )}
+      </div>
 
+      {/* ─── Billing ─── */}
       <div className="keepsy-rise keepsy-rise-2">
         <StudentPaymentBanner
           student={student}
@@ -143,30 +189,22 @@ export default async function StudentDetailPage({
 
       {!student.billing_enabled && (
         <div className="mb-3 keepsy-rise keepsy-rise-2">
-          <span
-            className="text-xs"
-            style={{ color: "var(--ink-tertiary)" }}
-          >
+          <span className="text-xs" style={{ color: "var(--ink-tertiary)" }}>
             billing off
           </span>
         </div>
       )}
 
-      <div className="keepsy-rise keepsy-rise-3">
-        <StudentMessagingClient
-          studentName={student.name}
-          studentPhone={student.phone}
-          studentEmail={student.email}
-          studentId={student.id}
-          nextLessonTime={nextLessonTime}
-          amountDue={amountDue}
-          autoRemind={student.auto_remind}
-        />
-      </div>
+      {/* ─── Progress Summary ─── */}
+      <StudentProgressSummary
+        summary={student.progress_summary}
+        updatedAt={student.progress_summary_updated_at}
+        lessonCount={lessonsWithNotes}
+      />
 
-      {/* Divider */}
+      {/* ─── Lessons ─── */}
       <div
-        className="my-5"
+        className="mt-3 mb-2"
         style={{ height: "1px", backgroundColor: "var(--line-strong)" }}
       />
 
@@ -177,53 +215,46 @@ export default async function StudentDetailPage({
         >
           lessons
         </h2>
-        <Link
-          href={`/today?newLesson=true&studentId=${id}`}
-          className="text-sm font-medium transition-colors"
-          style={{ color: "var(--accent)", textDecoration: "underline", textUnderlineOffset: "3px" }}
-        >
-          + lesson
-        </Link>
+        <AddLessonButton
+          studentId={id}
+          studentName={student.name}
+          defaultDuration={student.lesson_default_duration_min ?? undefined}
+          billingCycleLessons={student.billing_cycle_lessons}
+        />
       </div>
 
-      <StudentDetailClient studentName={student.name} lessons={lessons} />
+      <StudentLessons lessons={lessons} studentName={student.name} />
 
-      {lessons.length === 0 ? (
-        <p
-          className="text-sm py-4 font-display italic"
-          style={{ color: "var(--ink-tertiary)" }}
-        >
-          no lessons yet
-        </p>
-      ) : (
-        <div className="space-y-2 mb-6">
-          {lessons.map((lesson) => (
-            <LessonCard key={lesson.id} lesson={lesson} showStudent={false} studentName={student.name} />
-          ))}
-        </div>
-      )}
+      {/* ─── Messages ─── */}
+      <div
+        className="mt-3 mb-2"
+        style={{ height: "1px", backgroundColor: "var(--line-strong)" }}
+      />
 
+      <div className="keepsy-rise keepsy-rise-4">
+        <StudentMessages
+          messages={messageLogs}
+          studentName={student.name}
+          studentPhone={student.phone}
+          studentEmail={student.email}
+          studentId={student.id}
+          nextLessonTime={nextLessonTime}
+          amountDue={amountDue || (student.cycle_price ?? undefined)}
+          autoRemind={student.auto_remind}
+          contactMethod={student.contact_method}
+          teacherName={teacherFirstName}
+          lastMessageHint={lastMessageHint}
+        />
+      </div>
+
+      {/* ─── Payment history ─── */}
       {student.billing_enabled && payments.length > 0 && (
         <>
           <div
-            className="my-5"
+            className="mt-3 mb-2"
             style={{ height: "1px", backgroundColor: "var(--line-strong)" }}
           />
-          <h2
-            className="font-display text-lg mb-3"
-            style={{ color: "var(--ink-primary)" }}
-          >
-            payment history
-          </h2>
-          <div className="space-y-2">
-            {payments.map((payment) => (
-              <PaymentCard
-                key={payment.id}
-                payment={payment}
-                showStudent={false}
-              />
-            ))}
-          </div>
+          <StudentPayments payments={payments} lastPaymentHint={lastPaymentHint} />
         </>
       )}
     </div>

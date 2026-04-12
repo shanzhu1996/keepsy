@@ -37,7 +37,7 @@ export async function POST(
       .eq("user_id", user.id);
     if (updateErr) throw updateErr;
 
-    const student = lesson.student as { id: string } | null;
+    const student = (lesson.student as unknown) as { id: string } | null;
     if (student) {
       await supabase.from("message_logs").insert({
         user_id: user.id,

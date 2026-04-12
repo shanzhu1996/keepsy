@@ -20,9 +20,9 @@ export async function generateFromTranscript(
 
 1. "student_message" — a short, warm, encouraging message addressed directly to ${firstName} (or their parent). 2-3 sentences, friendly tone, ready to send as a text. No bullet points. Do not sign off with a name.
 
-2. "lesson_report" — a structured teacher report with five sections. Each section is an ARRAY of concise bullet strings. Keep it clean and professional, no fluff. Each section should have at most 1–3 bullets. Use empty arrays when a section doesn't apply — never invent content.
-   - "covered": key topics, pieces, or techniques worked on this lesson.
-   - "teacher_notes": observations, issues, or progress notes (internal).
+2. "lesson_report" — a structured teacher report with five sections. Each section is an ARRAY of concise bullet strings. Keep the teacher's natural voice — casual, specific, no corporate fluff. Each section should have at most 1–3 bullets. Use empty arrays when a section doesn't apply — never invent content.
+   - "covered": key topics, pieces, or techniques worked on (e.g. "C major scale", "Fur Elise bars 1-16").
+   - "teacher_notes": the teacher's quick personal recap — what actually happened, how it went, what stood out. Write like a sticky note to yourself: "went over C major and A minor, picked up new keys quickly" or "struggled with left hand timing, needs more slow practice". Keep the teacher's words, don't over-polish or generalize. Never write generic praise like "showed improvement" — be specific.
    - "assignments": clear practice tasks for before next lesson. Each ≤12 words.
    - "next_lesson_plan": what to focus on next time.
    - "materials": resources, links, or references mentioned (optional; empty array if none).
@@ -228,4 +228,50 @@ export async function generateRescheduleMessage(
   });
 
   return response.choices[0]?.message?.content ?? "";
+}
+
+export async function generateProgressSummary(
+  lessonNotes: { date: string; covered: string[]; teacherNotes: string[]; assignments: string[]; nextPlan: string[] }[],
+  studentName: string
+): Promise<string> {
+  const lessonsText = lessonNotes
+    .map((l, i) => {
+      const parts: string[] = [];
+      if (l.covered.length) parts.push(`Covered: ${l.covered.join(", ")}`);
+      if (l.teacherNotes.length) parts.push(`Notes: ${l.teacherNotes.join("; ")}`);
+      if (l.assignments.length) parts.push(`Assignments: ${l.assignments.join(", ")}`);
+      if (l.nextPlan.length) parts.push(`Next plan: ${l.nextPlan.join(", ")}`);
+      return `Lesson ${i + 1} (${l.date}):\n${parts.join("\n")}`;
+    })
+    .join("\n\n");
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      {
+        role: "system",
+        content: `You are a private teacher's internal voice. Given notes from ${lessonNotes.length} lessons with ${studentName}, write a brief progress note to yourself.
+
+Format: 1-2 short sentences summarizing what you've covered so far and any progress. If there's a recurring issue across lessons, add one more sentence starting with "keep an eye on" or "watch for". If no recurring issue, skip it.
+
+Rules:
+- Write in lowercase, casual teacher voice — like a sticky note to yourself
+- Reference specific pieces, techniques, or concepts from the notes
+- Total length: 2-3 sentences max
+- Don't invent information not in the notes
+- Use "${studentName.split(" ")[0]}" not "the student"
+
+Respond in JSON: { "summary": "..." }`,
+      },
+      { role: "user", content: lessonsText },
+    ],
+    response_format: { type: "json_object" },
+    temperature: 0.4,
+    max_tokens: 400,
+  });
+
+  const content = response.choices[0]?.message?.content;
+  if (!content) throw new Error("No response from OpenAI");
+  const parsed = JSON.parse(content);
+  return typeof parsed.summary === "string" ? parsed.summary : "";
 }

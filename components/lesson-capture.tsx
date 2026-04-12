@@ -11,10 +11,16 @@ import type { GeneratedNote } from "@/lib/types";
 interface LessonCaptureProps {
   lessonId: string;
   studentName: string;
+  studentPhone: string | null;
+  studentEmail: string | null;
+  contactMethod: string;
   timeLabel: string;
+  dateLabel: string;
+  teacherName: string | null;
   initialNote: GeneratedNote | null;
   initialMode?: "voice" | "type";
   nextLessonLabel?: string | null;
+  prevLessonSnippet?: string | null;
 }
 
 type Phase = "capture" | "processing" | "result";
@@ -31,13 +37,21 @@ const LANGUAGES = [
   { code: "it-IT", label: "IT", name: "Italian" },
 ];
 
+const TOPIC_PILLS = ["what you covered", "assignments", "what's next"];
+
 export default function LessonCapture({
   lessonId,
   studentName,
+  studentPhone,
+  studentEmail,
+  contactMethod,
   timeLabel,
+  dateLabel,
+  teacherName,
   initialNote,
   initialMode = "voice",
   nextLessonLabel,
+  prevLessonSnippet,
 }: LessonCaptureProps) {
   const router = useRouter();
   const firstName = studentName.split(" ")[0] || studentName;
@@ -49,6 +63,7 @@ export default function LessonCapture({
   const [error, setError] = useState<string | null>(null);
   const [lang, setLang] = useState<string>("en-US");
   const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
 
   useEffect(() => {
     try {
@@ -97,12 +112,18 @@ export default function LessonCapture({
       <LessonResult
         lessonId={lessonId}
         studentFirstName={firstName}
+        studentPhone={studentPhone}
+        studentEmail={studentEmail}
+        contactMethod={contactMethod}
+        dateLabel={dateLabel}
+        teacherName={teacherName}
         initialNote={note}
         nextLessonLabel={nextLessonLabel ?? null}
         onReRecord={() => {
           setNote(null);
           setPhase("capture");
           setMode("voice");
+          setHasStarted(false);
         }}
       />
     );
@@ -117,11 +138,11 @@ export default function LessonCapture({
       >
         <button
           type="button"
-          onClick={() => router.back()}
+          onClick={() => { router.refresh(); router.back(); }}
           className="text-[13px]"
           style={{ color: "var(--ink-secondary)" }}
         >
-          ← Back
+          ‹ back
         </button>
         <div
           className="text-[14px] font-semibold"
@@ -134,26 +155,37 @@ export default function LessonCapture({
             <button
               type="button"
               onClick={() => setLangMenuOpen((v) => !v)}
-              className="px-2.5 py-1 rounded-full bg-white border border-gray-200 text-xs text-gray-700 hover:border-amber-400"
+              className="px-2.5 py-1 rounded-full text-xs"
+              style={{
+                backgroundColor: "var(--bg-surface)",
+                border: "1px solid var(--line-subtle)",
+                color: "var(--ink-secondary)",
+              }}
               aria-label="Language"
             >
-              🌐 {currentLang.label}
+              {currentLang.label}
             </button>
             {langMenuOpen && (
               <div
-                className="absolute right-0 top-9 bg-white rounded-lg py-1 min-w-[160px] z-30"
-                style={{ boxShadow: "0 6px 20px rgba(0,0,0,0.12)" }}
+                className="absolute right-0 top-9 rounded-lg py-1 min-w-[160px] z-30"
+                style={{
+                  backgroundColor: "var(--bg-surface)",
+                  boxShadow: "var(--shadow-popover)",
+                }}
               >
                 {LANGUAGES.map((l) => (
                   <button
                     key={l.code}
                     type="button"
                     onClick={() => changeLang(l.code)}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-amber-50 ${
-                      l.code === lang
-                        ? "text-amber-700 font-medium"
-                        : "text-gray-700"
-                    }`}
+                    className="w-full text-left px-3 py-2 text-sm"
+                    style={{
+                      color:
+                        l.code === lang
+                          ? "var(--accent-ink)"
+                          : "var(--ink-primary)",
+                      fontWeight: l.code === lang ? 500 : 400,
+                    }}
                   >
                     {l.name}
                   </button>
@@ -161,24 +193,45 @@ export default function LessonCapture({
               </div>
             )}
           </div>
-          <div className="flex gap-1 bg-white border border-gray-200 rounded-full p-0.5 text-xs">
+          <div
+            className="flex gap-0.5 rounded-full p-0.5"
+            style={{
+              backgroundColor: "var(--bg-surface)",
+              border: "1px solid var(--line-subtle)",
+            }}
+          >
             <button
               type="button"
               onClick={() => setMode("voice")}
-              className={`px-2.5 py-1 rounded-full transition ${
-                mode === "voice" ? "bg-amber-600 text-white" : "text-gray-600"
-              }`}
+              className="w-8 h-7 flex items-center justify-center rounded-full transition"
+              style={{
+                backgroundColor:
+                  mode === "voice" ? "var(--accent)" : "transparent",
+                color: mode === "voice" ? "#fff" : "var(--ink-secondary)",
+              }}
+              aria-label="Voice mode"
             >
-              🎙 Speak
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <line x1="12" y1="19" x2="12" y2="22" />
+              </svg>
             </button>
             <button
               type="button"
               onClick={() => setMode("type")}
-              className={`px-2.5 py-1 rounded-full transition ${
-                mode === "type" ? "bg-amber-600 text-white" : "text-gray-600"
-              }`}
+              className="w-8 h-7 flex items-center justify-center rounded-full transition"
+              style={{
+                backgroundColor:
+                  mode === "type" ? "var(--accent)" : "transparent",
+                color: mode === "type" ? "#fff" : "var(--ink-secondary)",
+              }}
+              aria-label="Type mode"
             >
-              ⌨ Type
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                <path d="m15 5 4 4" />
+              </svg>
             </button>
           </div>
         </div>
@@ -188,58 +241,159 @@ export default function LessonCapture({
       <div className="flex-1 min-h-0 flex flex-col">
         {phase === "processing" ? (
           <div className="h-full flex flex-col items-center justify-center gap-3">
-            <div className="text-3xl">✨</div>
-            <p className="text-base text-gray-700">Writing it up…</p>
+            <div
+              className="w-6 h-6 rounded-full animate-spin"
+              style={{
+                border: "2px solid var(--line-subtle)",
+                borderTopColor: "var(--accent)",
+              }}
+            />
+            <p
+              className="font-display text-[16px]"
+              style={{ color: "var(--ink-secondary)" }}
+            >
+              writing {firstName}&apos;s report...
+            </p>
           </div>
-        ) : mode === "voice" ? (
-          <VoiceCapture
-            key={lang}
-            studentFirstName={firstName}
-            lang={lang}
-            onComplete={(text) => generate(text)}
-          />
         ) : (
           <>
-            <div className="flex-1 min-h-0 overflow-y-auto p-4 max-w-lg w-full mx-auto">
-              <Textarea
-                autoFocus
-                value={typedInput}
-                onChange={(e) => setTypedInput(e.target.value)}
-                placeholder={`Worked on…\nWent well / tricky bits…\nFor ${firstName} next week…`}
-                className="w-full min-h-[260px] text-base leading-relaxed bg-white"
-              />
-              {typedInput.trim().length > 0 &&
-                typedInput.trim().split(/\s+/).length < 15 && (
-                  <p className="text-xs text-gray-500 mt-2">
-                    Short note — your message will be brief too.
-                  </p>
-                )}
-            </div>
-            <div
-              className="shrink-0 bg-[var(--bg-canvas)] px-4 py-4 max-w-lg w-full mx-auto"
-              style={{ borderTop: "1px solid var(--line-subtle)" }}
-            >
-              <Button
-                size="lg"
-                className="w-full h-12 text-[15px] font-semibold"
-                style={{
-                  backgroundColor: "var(--accent)",
-                  borderRadius: "var(--radius)",
-                  boxShadow: "var(--shadow-cta)",
-                  letterSpacing: "-0.005em",
-                }}
-                onClick={handleTypeGenerate}
-                disabled={!typedInput.trim()}
+            {/* ─── Expectation banner ─── */}
+            {phase === "capture" && (
+              <div
+                className={`text-center px-6 pt-4 pb-1 keepsy-rise keepsy-rise-1 ${hasStarted && mode === "voice" ? "keepsy-fade-up pointer-events-none" : ""}`}
               >
-                Generate ✨
-              </Button>
-            </div>
+                <p
+                  className="font-display text-[17px]"
+                  style={{ color: "var(--ink-secondary)" }}
+                >
+                  just the highlights — keepsy writes the full report
+                </p>
+                <p
+                  className="text-[13px] mt-1"
+                  style={{ color: "var(--ink-tertiary)" }}
+                >
+                  a few sentences is all it takes
+                </p>
+              </div>
+            )}
+
+            {/* ─── Topic nudge pills ─── */}
+            {phase === "capture" && (
+              <div
+                className={`flex flex-wrap justify-center gap-2 px-4 pt-2 pb-1 keepsy-rise keepsy-rise-2 transition-opacity duration-300 ${
+                  hasStarted && mode === "voice" ? "opacity-40" : "opacity-100"
+                }`}
+              >
+                {TOPIC_PILLS.map((pill) => (
+                  <span
+                    key={pill}
+                    className="text-[12px] px-2.5 py-1 rounded-full"
+                    style={{
+                      backgroundColor: "var(--accent-soft)",
+                      color: "var(--accent-ink)",
+                    }}
+                  >
+                    {pill}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* ─── Previous lesson context ─── */}
+            {phase === "capture" && prevLessonSnippet && !hasStarted && (
+              <div
+                className="text-center px-6 pt-2 pb-1 keepsy-rise keepsy-rise-3"
+              >
+                <p
+                  className="text-[12px] italic"
+                  style={{ color: "var(--ink-tertiary)", lineHeight: 1.5 }}
+                >
+                  last time: {prevLessonSnippet}
+                </p>
+              </div>
+            )}
+
+            {/* ─── Mode-specific content ─── */}
+            {mode === "voice" ? (
+              <VoiceCapture
+                key={lang}
+                studentFirstName={firstName}
+                lang={lang}
+                onComplete={(text) => generate(text)}
+                onRecordingStart={() => setHasStarted(true)}
+              />
+            ) : (
+              <>
+                <div className="flex-1 min-h-0 overflow-y-auto p-4 max-w-lg w-full mx-auto">
+                  <Textarea
+                    autoFocus
+                    value={typedInput}
+                    onChange={(e) => {
+                      setTypedInput(e.target.value);
+                      if (!hasStarted && e.target.value.length > 0) {
+                        setHasStarted(true);
+                      }
+                    }}
+                    placeholder={`e.g. "Worked on Fur Elise bars 1-16. Right hand solid, left hand needs practice. Assigned hands-separate work for next week."`}
+                    className="w-full min-h-[120px] max-h-[40vh] text-base leading-relaxed"
+                    style={{
+                      backgroundColor: "var(--bg-surface)",
+                      border: "1px solid var(--line-subtle)",
+                      color: "var(--ink-primary)",
+                    }}
+                  />
+                  {typedInput.trim().length > 0 &&
+                    typedInput.trim().split(/\s+/).length < 15 && (
+                      <p
+                        className="text-xs mt-3 text-center"
+                        style={{ color: "var(--ink-tertiary)" }}
+                      >
+                        keepsy works best with a few sentences — even brief
+                        notes make great reports
+                      </p>
+                    )}
+                </div>
+                <div
+                  className="shrink-0 px-4 py-4 max-w-lg w-full mx-auto"
+                  style={{ borderTop: "1px solid var(--line-subtle)" }}
+                >
+                  <Button
+                    size="lg"
+                    className="w-full h-12 text-[15px] font-semibold"
+                    style={{
+                      backgroundColor: typedInput.trim()
+                        ? "var(--accent)"
+                        : "var(--bg-muted)",
+                      borderRadius: "var(--radius)",
+                      boxShadow: typedInput.trim()
+                        ? "var(--shadow-cta)"
+                        : "none",
+                      letterSpacing: "-0.005em",
+                      color: typedInput.trim()
+                        ? "#fff"
+                        : "var(--ink-tertiary)",
+                    }}
+                    onClick={handleTypeGenerate}
+                    disabled={!typedInput.trim()}
+                  >
+                    write the report
+                  </Button>
+                </div>
+              </>
+            )}
           </>
         )}
       </div>
 
       {error && (
-        <div className="px-4 py-2 text-sm text-red-700 bg-red-50 border-t border-red-200">
+        <div
+          className="px-4 py-2 text-sm"
+          style={{
+            color: "var(--danger)",
+            backgroundColor: "var(--accent-soft)",
+            borderTop: "1px solid var(--line-subtle)",
+          }}
+        >
           {error}
         </div>
       )}

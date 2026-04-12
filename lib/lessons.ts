@@ -31,6 +31,29 @@ export async function getLessonsForStudent(
   return data ?? [];
 }
 
+/** Returns a map of studentId → completed lesson count (for billing cycle display) */
+export async function getCompletedLessonCounts(): Promise<Record<string, number>> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return {};
+
+  const { data, error } = await supabase
+    .from("lessons")
+    .select("student_id")
+    .eq("user_id", user.id)
+    .eq("status", "completed");
+
+  if (error) return {};
+
+  const counts: Record<string, number> = {};
+  for (const row of data ?? []) {
+    counts[row.student_id] = (counts[row.student_id] ?? 0) + 1;
+  }
+  return counts;
+}
+
 export async function getLesson(id: string): Promise<Lesson | null> {
   const supabase = await createClient();
   const { data, error } = await supabase

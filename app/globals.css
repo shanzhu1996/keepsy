@@ -140,6 +140,14 @@ main {
 .keepsy-rise-3 { animation-delay: 160ms; }
 .keepsy-rise-4 { animation-delay: 240ms; }
 
+/* Fade-up exit for capture page banner */
+@keyframes keepsy-fade-up {
+  to { opacity: 0; transform: translateY(-4px); }
+}
+.keepsy-fade-up {
+  animation: keepsy-fade-up 300ms ease forwards;
+}
+
 /* Lesson card — hover lift + entrance stagger */
 @keyframes keepsy-card-in {
   from { opacity: 0; transform: translateY(6px); }
@@ -184,4 +192,42 @@ main {
 .finished-collapse > div {
   overflow: hidden;
   min-height: 0;
+}
+
+/* Note snippet: clamp to 1 line, expand on parent hover */
+.note-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: -webkit-line-clamp 0.15s ease;
+}
+a:hover .note-clamp {
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+
+/* Editable bullet fields — subtle underline to hint editability */
+.keepsy-editable-field {
+  border-bottom: 1px dashed var(--line-strong);
+  transition: border-color 0.15s ease, border-bottom-style 0.15s ease;
+}
+.keepsy-editable-field:hover {
+  border-bottom-color: var(--ink-tertiary);
+}
+.keepsy-editable-field:focus {
+  border-bottom-color: var(--accent);
+  border-bottom-style: solid;
+}
+
+/* Contact links — quiet by default, underline on hover */
+.contact-link {
+  color: var(--ink-tertiary);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+.contact-link:hover {
+  color: var(--ink-secondary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }

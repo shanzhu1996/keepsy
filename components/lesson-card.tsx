@@ -11,6 +11,7 @@ import {
 import CalendarPicker from "@/components/calendar-picker";
 import TimePickerInput from "@/components/time-picker";
 import type { Lesson } from "@/lib/types";
+import { extractNoteSnippet } from "@/lib/note-utils";
 
 interface LessonCardProps {
   lesson: Lesson;
@@ -176,7 +177,12 @@ export default function LessonCard({
   }
 
   function goCapture() {
-    router.push(`/lessons/${lesson.id}/capture`);
+    // If notes already exist, go to view/edit; otherwise go to capture
+    if (noteExists) {
+      router.push(`/lessons/${lesson.id}/notes`);
+    } else {
+      router.push(`/lessons/${lesson.id}/capture`);
+    }
   }
 
   // --- CANCELLED state: simple faded row (unchanged) ---
@@ -297,6 +303,21 @@ export default function LessonCard({
             )}
           </p>
         )}
+
+        {/* Note snippet for finished lessons */}
+        {timeStatus === "finished" && noteExists && (() => {
+          const snippet = extractNoteSnippet(lesson.raw_note);
+          if (!snippet) return null;
+          return (
+            <p
+              className="text-[12px] italic mt-2 truncate"
+              style={{ color: "var(--ink-tertiary)", lineHeight: 1.4 }}
+              title={snippet}
+            >
+              {snippet}
+            </p>
+          );
+        })()}
 
         {/* Row 3: text-style CTA — only after the lesson ends */}
         {timeStatus === "finished" && (() => {

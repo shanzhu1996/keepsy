@@ -33,7 +33,7 @@ export async function POST(
       return NextResponse.json({ error: "No message to send" }, { status: 400 });
     }
 
-    const student = lesson.student as
+    const student = (lesson.student as unknown) as
       | { id: string; name: string; phone: string | null; contact_method: string }
       | null;
     const phone = student?.phone ?? null;

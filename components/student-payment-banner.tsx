@@ -90,7 +90,7 @@ export default function StudentPaymentBanner({
 
   return (
     <div
-      className="rounded-xl px-4 py-4 mb-4"
+      className="rounded-xl px-4 py-3 mb-3"
       style={{
         backgroundColor: "var(--bg-surface)",
         border: `1px solid ${billingStatus === "overdue" ? "var(--accent)" : "var(--line-subtle)"}`,

@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { sendSMS } from "@/lib/sms";
+import { sendEmail } from "@/lib/email";
 
 export async function POST(request: Request) {
   try {
-    const { studentPhone, studentId, message } = await request.json();
+    const { studentEmail, studentId, message, subject } = await request.json();
     const supabase = await createClient();
 
     const {
@@ -14,39 +14,37 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!studentPhone) {
+    if (!studentEmail) {
       return NextResponse.json(
-        { error: "No phone number provided" },
+        { error: "No email address provided" },
         { status: 400 }
       );
     }
 
-    // Check if Twilio is configured
-    if (
-      !process.env.TWILIO_ACCOUNT_SID ||
-      !process.env.TWILIO_AUTH_TOKEN ||
-      !process.env.TWILIO_PHONE_NUMBER
-    ) {
+    if (!process.env.RESEND_API_KEY) {
       return NextResponse.json(
-        { error: "Twilio not configured" },
+        { error: "Email service not configured" },
         { status: 400 }
       );
     }
 
-    // Send SMS
-    const messageSid = await sendSMS(studentPhone, message);
+    const emailId = await sendEmail(
+      studentEmail,
+      subject || "Message from your teacher",
+      message
+    );
 
     // Log the message
     await supabase.from("message_logs").insert({
       user_id: user.id,
       student_id: studentId || "unknown",
-      type: "sms",
+      type: "email",
       content: message,
       sent: true,
       sent_at: new Date().toISOString(),
     });
 
-    return NextResponse.json({ success: true, messageSid });
+    return NextResponse.json({ success: true, emailId });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Server error" },

@@ -5,6 +5,12 @@ import type { Lesson } from "@/lib/types";
 
 interface StudentDetailClientProps {
   studentName: string;
+  studentPhone?: string | null;
+  studentEmail?: string | null;
+  studentId: string;
+  nextLessonTime?: string;
+  amountDue?: number;
+  autoRemind: boolean;
   lessons: Lesson[];
 }
 
@@ -12,29 +18,24 @@ export default function StudentDetailClient({
   studentName,
   lessons,
 }: StudentDetailClientProps) {
-  const handleExportPDF = () => {
-    exportLessonNotesToPDF(studentName, lessons);
-  };
+  const lessonsWithNotes = lessons.filter((l) => l.raw_note || l.student_summary);
 
-  const lessonsWithNotes = lessons.filter(
-    (l) => l.raw_note || l.student_summary
-  );
+  if (lessonsWithNotes.length === 0) return null;
 
   return (
-    <>
-      {lessonsWithNotes.length > 0 && (
-        <button
-          onClick={handleExportPDF}
-          className="text-sm mb-4 transition-colors"
-          style={{
-            color: "var(--ink-secondary)",
-            textDecoration: "underline",
-            textUnderlineOffset: "3px",
-          }}
-        >
-          export notes to pdf
-        </button>
-      )}
-    </>
+    <button
+      onClick={() => exportLessonNotesToPDF(studentName, lessons)}
+      className="text-xs font-medium lesson-cta"
+      style={{
+        color: "var(--ink-tertiary)",
+        textDecoration: "underline",
+        textUnderlineOffset: "3px",
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+      }}
+    >
+      export pdf
+    </button>
   );
 }

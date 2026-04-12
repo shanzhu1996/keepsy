@@ -59,6 +59,22 @@ export async function POST(request: Request) {
 
     if (updateErr) throw updateErr;
 
+    // Fire-and-forget: regenerate student progress summary in the background
+    const { data: lessonData } = await supabase
+      .from("lessons")
+      .select("student_id")
+      .eq("id", lessonId)
+      .single();
+    if (lessonData?.student_id) {
+      const origin = new URL(request.url).origin;
+      fetch(`${origin}/api/students/${lessonData.student_id}/summary`, {
+        method: "POST",
+        headers: {
+          cookie: request.headers.get("cookie") ?? "",
+        },
+      }).catch(() => {});
+    }
+
     return NextResponse.json({ note });
   } catch (err) {
     return NextResponse.json(

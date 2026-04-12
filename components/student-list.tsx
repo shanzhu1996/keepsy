@@ -28,18 +28,21 @@ interface StudentItem {
   billing_enabled: boolean;
   billing_cycle_lessons: number | null;
   lessons_since_last_payment: number;
+  cycle_lessons_offset?: number;
 }
 
 interface StudentListProps {
   students: StudentItem[];
   nextLessonLabels: Record<string, string>;
   paymentDueIds: string[];
+  completedCounts: Record<string, number>;
 }
 
 export default function StudentList({
   students: initialStudents,
   nextLessonLabels,
   paymentDueIds,
+  completedCounts,
 }: StudentListProps) {
   const [students, setStudents] = useState(initialStudents);
   const paymentDueSet = new Set(paymentDueIds);
@@ -98,6 +101,7 @@ export default function StudentList({
               student={student}
               nextLessonLabel={nextLessonLabels[student.id]}
               needsPayment={paymentDueSet.has(student.id)}
+              completedCount={completedCounts[student.id] ?? 0}
             />
           ))}
         </div>

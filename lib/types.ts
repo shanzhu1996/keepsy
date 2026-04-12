@@ -29,8 +29,11 @@ export interface Student {
   billing_cycle_lessons: number | null;
   cycle_price: number | null;
   lessons_since_last_payment: number;
+  cycle_lessons_offset: number;
   is_active: boolean;
   notes: string | null;
+  progress_summary: string | null;
+  progress_summary_updated_at: string | null;
   display_order: number;
   created_at: string;
 }

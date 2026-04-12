@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Switch } from "@/components/ui/switch";
 import type { Student } from "@/lib/types";
 
 interface StudentFormProps {
@@ -35,7 +34,7 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
   const [name, setName] = useState(student?.name ?? "");
   const [email, setEmail] = useState(student?.email ?? "");
   const [phone, setPhone] = useState(student?.phone ?? "");
-  const [autoRemind, setAutoRemind] = useState(student?.auto_remind ?? true);
+  const autoRemind = student?.auto_remind ?? true;
   const initialCycle = student?.billing_cycle_lessons?.toString() ?? defaults?.cycleLessons?.toString() ?? "4";
   const [billingCycleLessons, setBillingCycleLessons] = useState(initialCycle);
   const [customCycle, setCustomCycle] = useState(
@@ -45,6 +44,8 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
     student?.cycle_price?.toString() ?? defaults?.cyclePrice?.toString() ?? ""
   );
   const [notes, setNotes] = useState(student?.notes ?? "");
+  const [lessonsRemaining, setLessonsRemaining] = useState("");
+  const [showMidCycle, setShowMidCycle] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -71,6 +72,14 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
     setLoading(true);
     setError("");
 
+    // Calculate offset: if teacher says "2 lessons remaining" on a 4-lesson cycle,
+    // that means 2 lessons are already done → offset = cycleLength - remaining
+    const cycleLen = parseInt(billingCycleLessons) || 0;
+    const remaining = parseInt(lessonsRemaining) || 0;
+    const offset = !isEditing && remaining > 0 && cycleLen > 0
+      ? Math.max(0, cycleLen - remaining)
+      : 0;
+
     const payload = {
       name,
       email: email || null,
@@ -83,6 +92,7 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
       notes: notes || null,
       is_active: true,
       lesson_default_duration_min: null,
+      ...(offset > 0 ? { cycle_lessons_offset: offset } : {}),
     };
 
     try {
@@ -237,20 +247,6 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
         {/* Divider */}
         <div style={{ height: "1px", backgroundColor: "var(--line-strong)", margin: "0 0 16px" }} />
 
-        {/* Auto reminders toggle */}
-        <div className="flex items-center justify-between mb-4">
-          <label
-            className="text-sm font-medium"
-            style={{ color: "var(--ink-secondary)" }}
-          >
-            auto lesson reminders
-          </label>
-          <Switch checked={autoRemind} onCheckedChange={setAutoRemind} />
-        </div>
-
-        {/* Divider */}
-        <div style={{ height: "1px", backgroundColor: "var(--line-strong)", margin: "0 0 16px" }} />
-
         {/* Billing */}
         <p
           className="text-xs font-medium mb-3"
@@ -364,6 +360,99 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
             </p>
           )}
         </div>
+
+        {/* Mid-cycle onboarding — only for new students with cycle > 1 */}
+        {!isEditing && billingCycleLessons && parseInt(billingCycleLessons) > 1 && (() => {
+          const cycleLen = parseInt(billingCycleLessons);
+          const remaining = parseInt(lessonsRemaining) || 0;
+          const completed = remaining > 0 ? cycleLen - remaining : 0;
+          const isOpen = showMidCycle || completed > 0;
+          return (
+            <div className="mb-5">
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={() => setShowMidCycle(!showMidCycle)}
+                className="text-xs"
+                style={{
+                  color: "var(--ink-tertiary)",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 0,
+                  textDecoration: "underline",
+                  textUnderlineOffset: "3px",
+                }}
+              >
+                {isOpen ? "hide" : "already mid-cycle?"}
+              </button>
+              {isOpen && (
+                <div className="mt-2">
+                  <label
+                    className="text-sm font-medium mb-2 block"
+                    style={{ color: "var(--ink-secondary)" }}
+                  >
+                    lessons completed this cycle
+                  </label>
+                  {cycleLen <= 8 ? (
+                    <div className="flex items-center gap-2">
+                      {Array.from({ length: cycleLen }, (_, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          tabIndex={-1}
+                          onClick={(e) => {
+                            (e.target as HTMLButtonElement).blur();
+                            const tapped = i + 1;
+                            if (completed === tapped) {
+                              setLessonsRemaining("");
+                            } else {
+                              setLessonsRemaining((cycleLen - tapped).toString());
+                            }
+                          }}
+                          style={{
+                            width: "28px",
+                            height: "28px",
+                            borderRadius: "50%",
+                            border: `1.5px solid ${i < completed ? "var(--accent)" : "var(--line-strong)"}`,
+                            backgroundColor: i < completed ? "var(--accent)" : "transparent",
+                            cursor: "pointer",
+                            transition: "all 150ms ease",
+                          }}
+                        />
+                      ))}
+                      <span className="text-xs" style={{ color: "var(--ink-tertiary)", marginLeft: "4px" }}>
+                        {completed === 0
+                          ? "none yet"
+                          : `${completed} of ${cycleLen} done`}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        max={cycleLen - 1}
+                        value={completed || ""}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value) || 0;
+                          const clamped = Math.min(Math.max(0, val), cycleLen - 1);
+                          setLessonsRemaining(clamped > 0 ? (cycleLen - clamped).toString() : "");
+                        }}
+                        style={{ ...inputStyle, width: "64px", textAlign: "center" }}
+                        onFocus={(e) => (e.target.style.borderColor = "var(--accent)")}
+                        onBlur={(e) => (e.target.style.borderColor = "var(--line-strong)")}
+                      />
+                      <span className="text-sm" style={{ color: "var(--ink-tertiary)" }}>
+                        of {cycleLen} done
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {error && (
           <p className="text-sm mb-3" style={{ color: "var(--danger)" }}>

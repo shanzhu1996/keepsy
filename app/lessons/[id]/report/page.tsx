@@ -1,7 +1,44 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getProfile } from "@/lib/settings";
 import PrintReport from "@/components/print-report";
 import type { LessonReport } from "@/lib/types";
+import type { Metadata } from "next";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { title: "Lesson Summary" };
+
+  const { data: lesson } = await supabase
+    .from("lessons")
+    .select("scheduled_at, student:students(name)")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!lesson) return { title: "Lesson Summary" };
+
+  const studentFirst =
+    ((lesson.student as { name?: string } | null)?.name ?? "Student").split(
+      " "
+    )[0];
+  const d = new Date(lesson.scheduled_at);
+  const dateShort = d.toLocaleDateString([], {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+
+  return { title: `Lesson Summary – ${studentFirst} · ${dateShort}` };
+}
 
 export default async function LessonReportPage({
   params,
@@ -69,6 +106,9 @@ export default async function LessonReportPage({
     minute: "2-digit",
   });
 
+  const profile = await getProfile();
+  const teacherName = profile?.name ?? null;
+
   return (
     <PrintReport
       studentName={studentName}
@@ -76,6 +116,7 @@ export default async function LessonReportPage({
       timeLabel={timeLabel}
       durationMin={lesson.duration_min}
       report={report}
+      teacherName={teacherName}
     />
   );
 }

@@ -29,6 +29,7 @@
     "openai": "^4.93.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "resend": "^6.10.0",
     "tailwind-merge": "^2.6.0",
     "twilio": "^5.5.1"
   },
