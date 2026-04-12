@@ -11,6 +11,7 @@ import StudentMessages from "@/components/student-messages";
 import StudentPayments from "@/components/student-payments";
 import AddLessonButton from "@/components/add-lesson-button";
 import StudentProgressSummary from "@/components/student-progress-summary";
+import SettingsTip from "@/components/settings-tip";
 
 export default async function StudentDetailPage({
   params,
@@ -105,6 +106,9 @@ export default async function StudentDetailPage({
 
   return (
     <div>
+      {/* Settings tip — one-time, after first student with billing */}
+      <SettingsTip hasBilling={student.billing_enabled && !!student.cycle_price} />
+
       {/* ─── Header: name + contact + actions ─── */}
       <div className="mb-3 keepsy-rise keepsy-rise-1">
         {/* Back link */}
