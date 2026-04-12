@@ -478,7 +478,7 @@ export default function AddLessonDialog({
                       >
                         <span style={{ fontWeight: selectedStudentObj ? 500 : 400 }}>
                           {students.length === 0
-                            ? "no students yet"
+                            ? "no students yet — add one first"
                             : selectedStudentObj
                             ? selectedStudentObj.name
                             : "pick a student"}
@@ -523,6 +523,16 @@ export default function AddLessonDialog({
                           </span>
                         )}
                       </button>
+
+                      {students.length === 0 && (
+                        <a
+                          href="/students/new"
+                          className="text-[12px] mt-1.5 ml-1 inline-block"
+                          style={{ color: "var(--accent)" }}
+                        >
+                          + add your first student
+                        </a>
+                      )}
 
                       {studentOpen && students.length > 0 && (
                         <div

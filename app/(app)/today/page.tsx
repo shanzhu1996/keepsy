@@ -165,17 +165,42 @@ export default function TodayPage() {
         {/* TODAY TAB */}
         <TabsContent value="today" className="mt-4 space-y-4">
           {todayLessons.length === 0 ? (
-            <p
-              className="text-center py-12 font-display"
-              style={{
-                fontSize: "20px",
-                fontStyle: "italic",
-                color: "var(--ink-tertiary)",
-                letterSpacing: "0.005em",
-              }}
-            >
-              A quiet day.
-            </p>
+            students.length === 0 ? (
+              <div className="text-center py-16">
+                <p
+                  className="font-display text-[20px] mb-2"
+                  style={{
+                    color: "var(--ink-secondary)",
+                    letterSpacing: "-0.01em",
+                  }}
+                >
+                  add your first student to get started
+                </p>
+                <a
+                  href="/students/new"
+                  className="inline-block text-[14px] font-semibold px-5 py-2.5 rounded-[var(--radius)] mt-2"
+                  style={{
+                    backgroundColor: "var(--accent)",
+                    color: "#fff",
+                    boxShadow: "var(--shadow-cta)",
+                  }}
+                >
+                  + add student
+                </a>
+              </div>
+            ) : (
+              <p
+                className="text-center py-12 font-display"
+                style={{
+                  fontSize: "20px",
+                  fontStyle: "italic",
+                  color: "var(--ink-tertiary)",
+                  letterSpacing: "0.005em",
+                }}
+              >
+                A quiet day.
+              </p>
+            )
           ) : (
             (() => {
               const now = Date.now();

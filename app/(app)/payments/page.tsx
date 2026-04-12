@@ -61,6 +61,26 @@ export default async function PaymentsPage() {
         </h1>
       </div>
 
+      {outstanding.length === 0 && paid.length === 0 ? (
+        <div className="text-center py-16 keepsy-rise keepsy-rise-2">
+          <p
+            className="font-display text-[20px]"
+            style={{
+              color: "var(--ink-secondary)",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            payment tracking starts automatically
+          </p>
+          <p
+            className="text-[14px] mt-1"
+            style={{ color: "var(--ink-tertiary)" }}
+          >
+            when you set up billing for a student
+          </p>
+        </div>
+      ) : (
+      <>
       {/* Monthly income summary — above tabs, always visible */}
       <div className="keepsy-rise keepsy-rise-2">
         <IncomeSummary months={monthlySummary} />
@@ -158,6 +178,8 @@ export default async function PaymentsPage() {
           )}
         </TabsContent>
       </Tabs>
+      </>
+      )}
     </div>
   );
 }

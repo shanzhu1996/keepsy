@@ -152,8 +152,17 @@ export default function SettingsForm({ profile, authEmail }: SettingsFormProps) 
           value={(profile?.timezone ?? detectedTz).replace(/_/g, " ")}
         />
 
-        {/* Sign out */}
-        <div className="mt-8 mb-4">
+        {/* Feedback + Sign out */}
+        <div className="mt-8 mb-4 space-y-4">
+          <a
+            href="mailto:hello@keepsy.app"
+            className="text-[12px] block"
+            style={{
+              color: "var(--ink-tertiary)",
+            }}
+          >
+            questions or feedback? <span style={{ color: "var(--accent)" }}>hello@keepsy.app</span>
+          </a>
           <button
             onClick={handleSignOut}
             className="text-xs font-medium transition-colors"
