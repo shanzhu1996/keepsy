@@ -398,7 +398,7 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
               style={{ ...inputStyle, paddingLeft: "24px" }}
               onFocus={(e) => (e.target.style.borderColor = "var(--accent)")}
               onBlur={(e) => (e.target.style.borderColor = "var(--line-strong)")}
-              placeholder={billingCycleLessons === "1" ? "85" : "340"}
+              placeholder="amount"
             />
           </div>
           {billingCycleLessons && billingCycleLessons !== "1" && (
