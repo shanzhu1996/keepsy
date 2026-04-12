@@ -19,6 +19,10 @@ const fraunces = Fraunces({
 export const metadata: Metadata = {
   title: "Keepsy",
   description: "Lesson notes, payments & student admin for private instructors",
+  formatDetection: {
+    email: false,
+    telephone: false,
+  },
 };
 
 export default function RootLayout({

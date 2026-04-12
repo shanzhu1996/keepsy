@@ -364,7 +364,7 @@ function SettingRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between items-baseline py-2.5">
       <span className="text-sm" style={{ color: "var(--ink-tertiary)" }}>{label}</span>
-      <span className="text-sm font-medium" style={{ color: "var(--ink-primary)" }}>{value}</span>
+      <span className="text-sm font-medium" style={{ color: "var(--ink-primary)", textDecoration: "none" }}>{value}</span>
     </div>
   );
 }
