@@ -30,7 +30,7 @@ export default function OutstandingPaymentCard({ cycle }: { cycle: ActiveCycle }
         body: JSON.stringify({
           studentId: cycle.studentId,
           amount: parseFloat(amount) || 0,
-          lessonCount: cycle.lessonsCompleted,
+          lessonCount: cycle.cycleLength,
         }),
       });
       if (!res.ok) throw new Error("Failed");
@@ -76,9 +76,9 @@ export default function OutstandingPaymentCard({ cycle }: { cycle: ActiveCycle }
                 color: isOverdue ? "var(--accent-ink)" : "var(--ink-secondary)",
               }}
             >
-              {isOverdue ? "due" : "in progress"}
+              {isOverdue ? "overdue" : "due"}
             </span>
-            {isOverdue && cycle.amountDue > 0 && (
+            {cycle.amountDue > 0 && (
               <span
                 className="text-[15px] font-display-numerals font-medium"
                 style={{ color: "var(--ink-primary)" }}
@@ -89,7 +89,7 @@ export default function OutstandingPaymentCard({ cycle }: { cycle: ActiveCycle }
           </div>
         </div>
 
-        {isOverdue && !showConfirm && (
+        {!showConfirm && (
           <button
             type="button"
             onClick={() => setShowConfirm(true)}
@@ -106,14 +106,21 @@ export default function OutstandingPaymentCard({ cycle }: { cycle: ActiveCycle }
       </div>
 
       <p className="text-[12px] mt-2" style={{ color: "var(--ink-tertiary)" }}>
-        {cycle.lessonsCompleted} / {cycle.cycleLength} lessons
-        {cycle.cycleStartDate && (
-          <span className="ml-1">
-            · {fmtDate(cycle.cycleStartDate)}
-            {cycle.cycleEndDate ? ` – ${fmtDate(cycle.cycleEndDate)}` : " – ongoing"}
-          </span>
+        {isOverdue ? (
+          <>
+            {cycle.lessonsInUnpaidCycle} unpaid {cycle.lessonsInUnpaidCycle === 1 ? "lesson" : "lessons"}
+            {cycle.cycleStartDate && (
+              <span className="ml-1">
+                · {fmtDate(cycle.cycleStartDate)}
+                {cycle.cycleEndDate && cycle.cycleEndDate !== cycle.cycleStartDate
+                  ? ` – ${fmtDate(cycle.cycleEndDate)}`
+                  : ""}
+              </span>
+            )}
+          </>
+        ) : (
+          <>next cycle · {cycle.cycleLength} lessons</>
         )}
-        {!cycle.cycleStartDate && <span className="ml-1">· not started</span>}
       </p>
 
       {/* Confirm payment row */}

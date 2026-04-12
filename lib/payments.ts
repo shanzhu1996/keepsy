@@ -6,18 +6,23 @@ export interface ActiveCycle {
   studentName: string;
   studentPhone: string | null;
   cycleLength: number;
-  lessonsCompleted: number;
-  isComplete: boolean;
-  status: "overdue" | "in_progress"; // overdue = full cycle done, not paid; in_progress = partial cycle, not yet due
+  /** Lessons taken in the current (unpaid) cycle. 0 = due but not started yet. */
+  lessonsInUnpaidCycle: number;
+  status: "due" | "overdue";
   amountDue: number;
   cycleStartDate: string | null;
   cycleEndDate: string | null;
 }
 
 /**
- * Returns every billing-enabled student who has started a new cycle
- * (at least 1 completed lesson) with no corresponding payment recorded yet.
- * This is the source of truth for the Pending tab — no DB sync needed.
+ * Prepaid billing model: students pay BEFORE their cycle of lessons.
+ *
+ * Returns billing-enabled students who need to pay:
+ * - "due": previous paid cycle ended (or new student with 0 payments).
+ *          Next payment expected before more lessons happen.
+ * - "overdue": lessons are happening without payment for the current cycle.
+ *
+ * Students mid-cycle with payment in good standing are NOT returned.
  */
 export async function getActiveCycles(): Promise<ActiveCycle[]> {
   const supabase = await createClient();
@@ -57,40 +62,40 @@ export async function getActiveCycles(): Promise<ActiveCycle[]> {
     const studentLessons = (lessons ?? []).filter((l) => l.student_id === student.id);
     const studentPayments = (paidPayments ?? []).filter((p) => p.student_id === student.id);
 
-    const paidCount = studentPayments.length;
+    const paidCycles = studentPayments.length;
     const totalCompleted = studentLessons.length;
-    const completedCycles = Math.floor(totalCompleted / cycleLength);
-    const currentCycleProgress = totalCompleted % cycleLength;
-    const unpaidCompleteCycles = Math.max(0, completedCycles - paidCount);
-    const hasCurrentCyclePaid = paidCount > completedCycles;
 
-    const isOverdue = unpaidCompleteCycles > 0;
-    const isInProgress = currentCycleProgress > 0 && !hasCurrentCyclePaid;
+    // How many lessons are "covered" by payments
+    const lessonsCovered = paidCycles * cycleLength;
 
-    // Up to date and no progress → skip
-    if (!isOverdue && !isInProgress && currentCycleProgress === 0 && paidCount === 0) continue;
-    // Paid and no new cycle progress → skip
-    if (!isOverdue && !isInProgress && paidCount > 0 && currentCycleProgress === 0) continue;
+    // Lessons taken beyond what's been paid for
+    const unpaidLessons = Math.max(0, totalCompleted - lessonsCovered);
 
-    const status: "overdue" | "in_progress" = isOverdue ? "overdue" : "in_progress";
+    // New student with no payments and no lessons → "due" (pay before starting)
+    const isNewStudent = paidCycles === 0 && totalCompleted === 0;
 
-    let lessonsCompleted: number;
-    let isComplete: boolean;
-    let cycleStartDate: string | null;
-    let cycleEndDate: string | null;
+    // Previous cycle ended: student has used all paid lessons, or new student
+    // due = paid lessons are exhausted (totalCompleted >= lessonsCovered) and no extra lessons taken yet
+    const paidCycleEnded = paidCycles > 0 && totalCompleted >= lessonsCovered && unpaidLessons === 0;
 
-    if (unpaidCompleteCycles > 0) {
-      const startIdx = paidCount * cycleLength;
-      lessonsCompleted = cycleLength;
-      isComplete = true;
-      cycleStartDate = studentLessons[startIdx]?.scheduled_at ?? null;
-      cycleEndDate = studentLessons[startIdx + cycleLength - 1]?.scheduled_at ?? null;
-    } else {
-      const startIdx = completedCycles * cycleLength;
-      lessonsCompleted = currentCycleProgress;
-      isComplete = false;
-      cycleStartDate = currentCycleProgress > 0 ? studentLessons[startIdx]?.scheduled_at ?? null : null;
-      cycleEndDate = null;
+    // Overdue: lessons happening beyond what's paid for
+    const isOverdue = unpaidLessons > 0;
+
+    // Due: cycle ended or new student, but no unpaid lessons yet
+    const isDue = isNewStudent || paidCycleEnded;
+
+    if (!isDue && !isOverdue) continue;
+
+    const status: "due" | "overdue" = isOverdue ? "overdue" : "due";
+
+    // For overdue: show unpaid lessons range
+    // For due: no lessons in unpaid cycle yet
+    let cycleStartDate: string | null = null;
+    let cycleEndDate: string | null = null;
+
+    if (isOverdue) {
+      cycleStartDate = studentLessons[lessonsCovered]?.scheduled_at ?? null;
+      cycleEndDate = studentLessons[totalCompleted - 1]?.scheduled_at ?? null;
     }
 
     result.push({
@@ -98,16 +103,15 @@ export async function getActiveCycles(): Promise<ActiveCycle[]> {
       studentName: student.name,
       studentPhone: student.phone,
       cycleLength,
-      lessonsCompleted,
-      isComplete,
+      lessonsInUnpaidCycle: unpaidLessons,
       status,
-      amountDue: unpaidCompleteCycles > 0 ? (student.cycle_price ?? 0) : 0,
+      amountDue: student.cycle_price ?? 0,
       cycleStartDate,
       cycleEndDate,
     });
   }
 
-  // Sort: overdue first, then pending
+  // Sort: overdue first, then due
   result.sort((a, b) => (a.status === b.status ? 0 : a.status === "overdue" ? -1 : 1));
 
   return result;
