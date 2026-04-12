@@ -147,10 +147,6 @@ export default function SettingsForm({ profile, authEmail }: SettingsFormProps) 
 
         <SectionHeader>account</SectionHeader>
         <SettingRow label="email" value={authEmail ?? "—"} />
-        <SettingRow
-          label="timezone"
-          value={(profile?.timezone ?? detectedTz).replace(/_/g, " ")}
-        />
 
         {/* Feedback + Sign out */}
         <div className="mt-8 mb-4 space-y-4">
@@ -328,19 +324,6 @@ export default function SettingsForm({ profile, authEmail }: SettingsFormProps) 
       </div>
 
       <Divider />
-
-      {/* Timezone — read-only, auto-detected */}
-      <div className="mb-5">
-        <label className="text-sm font-medium mb-1.5 block" style={{ color: "var(--ink-secondary)" }}>
-          timezone
-        </label>
-        <p className="text-[14px]" style={{ color: "var(--ink-primary)" }}>
-          {(profile?.timezone ?? detectedTz).replace(/_/g, " ")}
-        </p>
-        <p className="text-[11px] mt-1" style={{ color: "var(--ink-tertiary)" }}>
-          detected from your browser
-        </p>
-      </div>
 
       {error && (
         <p className="text-sm mb-3" style={{ color: "var(--danger)" }}>{error}</p>
