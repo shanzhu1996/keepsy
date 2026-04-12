@@ -34,6 +34,9 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
   const [name, setName] = useState(student?.name ?? "");
   const [email, setEmail] = useState(student?.email ?? "");
   const [phone, setPhone] = useState(student?.phone ?? "");
+  const [contactMethod, setContactMethod] = useState<"sms" | "email">(
+    student?.contact_method === "email" ? "email" : student?.phone ? "sms" : "email"
+  );
   const autoRemind = student?.auto_remind ?? true;
   const initialCycle = student?.billing_cycle_lessons?.toString() ?? defaults?.cycleLessons?.toString() ?? "4";
   const [billingCycleLessons, setBillingCycleLessons] = useState(initialCycle);
@@ -84,7 +87,7 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
       name,
       email: email || null,
       phone: phone || null,
-      contact_method: phone ? ("sms" as const) : ("email" as const),
+      contact_method: contactMethod,
       billing_enabled: true,
       auto_remind: autoRemind,
       billing_cycle_lessons: parseInt(billingCycleLessons) || null,
@@ -225,6 +228,50 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
             </p>
           )}
         </div>
+
+        {/* Preferred contact — only show when both phone and email exist */}
+        {email.trim() && phone.trim() && (
+          <div className="mb-5">
+            <label
+              className="text-[12px] font-medium mb-1.5 block"
+              style={{ color: "var(--ink-secondary)" }}
+            >
+              preferred contact
+            </label>
+            <div
+              className="flex gap-0.5 rounded-full p-0.5 w-fit"
+              style={{
+                backgroundColor: "var(--bg-muted)",
+                border: "1px solid var(--line-subtle)",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setContactMethod("sms")}
+                className="px-3 py-1 rounded-full text-[12px] font-medium transition-colors"
+                style={{
+                  backgroundColor: contactMethod === "sms" ? "var(--bg-surface)" : "transparent",
+                  color: contactMethod === "sms" ? "var(--ink-primary)" : "var(--ink-tertiary)",
+                  boxShadow: contactMethod === "sms" ? "var(--shadow-card)" : "none",
+                }}
+              >
+                SMS
+              </button>
+              <button
+                type="button"
+                onClick={() => setContactMethod("email")}
+                className="px-3 py-1 rounded-full text-[12px] font-medium transition-colors"
+                style={{
+                  backgroundColor: contactMethod === "email" ? "var(--bg-surface)" : "transparent",
+                  color: contactMethod === "email" ? "var(--ink-primary)" : "var(--ink-tertiary)",
+                  boxShadow: contactMethod === "email" ? "var(--shadow-card)" : "none",
+                }}
+              >
+                Email
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Notes */}
         <div className="mb-5">

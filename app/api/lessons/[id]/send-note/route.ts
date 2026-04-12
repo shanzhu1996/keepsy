@@ -43,26 +43,31 @@ export async function POST(
       !!process.env.TWILIO_AUTH_TOKEN &&
       !!process.env.TWILIO_PHONE_NUMBER;
 
-    let sentVia: "sms" | "dry-run" = "dry-run";
+    let sentVia: "sms" | "copy" = "copy";
     if (twilioConfigured && phone) {
       await sendSMS(phone, message);
       sentVia = "sms";
     }
 
     const sentAt = new Date().toISOString();
-    const { error: updateErr } = await supabase
-      .from("lessons")
-      .update({ note_status: "sent", student_summary_sent_at: sentAt })
-      .eq("id", lessonId)
-      .eq("user_id", user.id);
-    if (updateErr) throw updateErr;
+
+    // Only mark as "sent" if actually delivered via SMS/email.
+    // If copied manually, keep as "draft" — teacher handles delivery.
+    if (sentVia === "sms") {
+      const { error: updateErr } = await supabase
+        .from("lessons")
+        .update({ note_status: "sent", student_summary_sent_at: sentAt })
+        .eq("id", lessonId)
+        .eq("user_id", user.id);
+      if (updateErr) throw updateErr;
+    }
 
     if (student) {
       await supabase.from("message_logs").insert({
         user_id: user.id,
         student_id: student.id,
         lesson_id: lessonId,
-        type: sentVia === "sms" ? "sms" : "dry-run",
+        type: sentVia,
         content: message,
         sent: sentVia === "sms",
         sent_at: sentVia === "sms" ? sentAt : null,

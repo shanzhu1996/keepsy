@@ -50,23 +50,30 @@ Respond in strict JSON:
 
   const content = response.choices[0]?.message?.content;
   if (!content) throw new Error("No response from OpenAI");
-  const parsed = JSON.parse(content);
+
   const toStringArray = (x: unknown): string[] =>
     Array.isArray(x)
       ? x.filter((v): v is string => typeof v === "string" && v.trim().length > 0)
       : [];
-  const report = (parsed.lesson_report ?? {}) as Record<string, unknown>;
-  return {
-    student_message:
-      typeof parsed.student_message === "string" ? parsed.student_message : "",
-    lesson_report: {
-      covered: toStringArray(report.covered),
-      teacher_notes: toStringArray(report.teacher_notes),
-      assignments: toStringArray(report.assignments),
-      next_lesson_plan: toStringArray(report.next_lesson_plan),
-      materials: toStringArray(report.materials),
-    },
-  };
+
+  try {
+    const parsed = JSON.parse(content);
+    const report = (parsed.lesson_report ?? {}) as Record<string, unknown>;
+    return {
+      student_message:
+        typeof parsed.student_message === "string" ? parsed.student_message : "",
+      lesson_report: {
+        covered: toStringArray(report.covered),
+        teacher_notes: toStringArray(report.teacher_notes),
+        assignments: toStringArray(report.assignments),
+        next_lesson_plan: toStringArray(report.next_lesson_plan),
+        materials: toStringArray(report.materials),
+      },
+    };
+  } catch {
+    console.error("Failed to parse OpenAI response:", content);
+    throw new Error("Couldn't understand the AI response. Please try again.");
+  }
 }
 
 export async function generateLessonSummaries(
@@ -91,8 +98,13 @@ Respond in JSON format: { "studentSummary": "..." }`,
 
   const content = response.choices[0]?.message?.content;
   if (!content) throw new Error("No response from OpenAI");
-  const parsed = JSON.parse(content);
-  return { studentSummary: parsed.studentSummary ?? "" };
+  try {
+    const parsed = JSON.parse(content);
+    return { studentSummary: parsed.studentSummary ?? "" };
+  } catch {
+    console.error("Failed to parse OpenAI response:", content);
+    return { studentSummary: "" };
+  }
 }
 
 export async function structureLessonNotes(
@@ -128,12 +140,17 @@ Respond in JSON:
 
   const content = response.choices[0]?.message?.content;
   if (!content) throw new Error("No response from OpenAI");
-  const parsed = JSON.parse(content);
-  return {
-    covered: Array.isArray(parsed.covered) ? parsed.covered : [],
-    teacherNotes: typeof parsed.teacherNotes === "string" ? parsed.teacherNotes : "",
-    assignments: Array.isArray(parsed.assignments) ? parsed.assignments : [],
-  };
+  try {
+    const parsed = JSON.parse(content);
+    return {
+      covered: Array.isArray(parsed.covered) ? parsed.covered : [],
+      teacherNotes: typeof parsed.teacherNotes === "string" ? parsed.teacherNotes : "",
+      assignments: Array.isArray(parsed.assignments) ? parsed.assignments : [],
+    };
+  } catch {
+    console.error("Failed to parse OpenAI response:", content);
+    return { covered: [], teacherNotes: "", assignments: [] };
+  }
 }
 
 export async function generatePaymentReminder(
@@ -287,6 +304,11 @@ Respond in JSON: { "summary": "..." }`,
 
   const content = response.choices[0]?.message?.content;
   if (!content) throw new Error("No response from OpenAI");
-  const parsed = JSON.parse(content);
-  return typeof parsed.summary === "string" ? parsed.summary : "";
+  try {
+    const parsed = JSON.parse(content);
+    return typeof parsed.summary === "string" ? parsed.summary : "";
+  } catch {
+    console.error("Failed to parse OpenAI response:", content);
+    return "";
+  }
 }

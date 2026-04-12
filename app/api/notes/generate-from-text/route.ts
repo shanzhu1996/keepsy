@@ -45,11 +45,8 @@ export async function POST(request: Request) {
       student_summary: note.student_message,
       note_status: "draft",
     };
-    // Auto-complete the lesson if it was still scheduled.
-    if (lesson.status === "scheduled") {
-      updates.status = "completed";
-      updates.completed_at = new Date().toISOString();
-    }
+    // Note: lesson completion is handled separately by the "Complete" action
+    // on the lesson card. We only save the note here — never auto-complete.
 
     const { error: updateErr } = await supabase
       .from("lessons")

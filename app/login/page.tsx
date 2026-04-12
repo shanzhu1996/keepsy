@@ -13,6 +13,8 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+  const [showReset, setShowReset] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
@@ -53,6 +55,26 @@ export default function LoginPage() {
     }
   }
 
+  async function handleResetPassword() {
+    if (!email.trim()) {
+      setError("Enter your email first");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      });
+      if (error) throw error;
+      setResetSent(true);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handleGoogle() {
     await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -60,6 +82,98 @@ export default function LoginPage() {
         redirectTo: `${window.location.origin}/auth/callback`,
       },
     });
+  }
+
+  // ─── Password reset states ───
+  if (resetSent) {
+    return (
+      <div className="min-h-dvh flex flex-col items-center justify-center px-6">
+        <div className="w-full max-w-sm text-center">
+          <div
+            className="mx-auto w-14 h-14 rounded-full flex items-center justify-center mb-5 keepsy-rise keepsy-rise-1"
+            style={{ backgroundColor: "var(--accent-soft)" }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect width="20" height="16" x="2" y="4" rx="2" />
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+            </svg>
+          </div>
+          <h1 className="font-display text-[26px] mb-2 keepsy-rise keepsy-rise-2" style={{ color: "var(--ink-primary)", letterSpacing: "-0.01em" }}>
+            check your inbox
+          </h1>
+          <p className="text-[14px] leading-relaxed mb-8 keepsy-rise keepsy-rise-3" style={{ color: "var(--ink-secondary)" }}>
+            we sent a password reset link to{" "}
+            <span style={{ color: "var(--ink-primary)", fontWeight: 500 }}>{email}</span>.
+          </p>
+          <button
+            type="button"
+            onClick={() => { setResetSent(false); setShowReset(false); }}
+            className="text-[13px] font-medium keepsy-rise keepsy-rise-4"
+            style={{ color: "var(--accent)" }}
+          >
+            back to log in
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (showReset) {
+    return (
+      <div className="min-h-dvh flex flex-col items-center justify-center px-6">
+        <div className="w-full max-w-sm">
+          <div className="text-center mb-8 keepsy-rise keepsy-rise-1">
+            <h1 className="font-display text-[34px] mb-1" style={{ color: "var(--ink-primary)", letterSpacing: "-0.02em" }}>
+              reset password
+            </h1>
+            <p className="text-[14px]" style={{ color: "var(--ink-secondary)" }}>
+              enter your email and we&apos;ll send a reset link
+            </p>
+          </div>
+          <div className="keepsy-rise keepsy-rise-2">
+            <input
+              type="email"
+              placeholder="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoFocus
+              className="w-full h-11 px-3 text-[14px] rounded-[10px] outline-none transition-colors"
+              style={{
+                backgroundColor: "var(--bg-surface)",
+                border: "1px solid var(--line-strong)",
+                color: "var(--ink-primary)",
+              }}
+              onFocus={(e) => (e.currentTarget.style.borderColor = "var(--accent)")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "var(--line-strong)")}
+              onKeyDown={(e) => { if (e.key === "Enter") handleResetPassword(); }}
+            />
+            {error && (
+              <div className="mt-3 px-3 py-2.5 rounded-[10px] text-[13px]" style={{ backgroundColor: "var(--accent-soft)", color: "var(--danger)", border: "1px solid rgba(179, 50, 31, 0.12)" }}>
+                {error}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={handleResetPassword}
+              disabled={loading}
+              className="w-full h-11 mt-4 text-[14px] font-semibold rounded-[10px] transition-colors"
+              style={{
+                backgroundColor: loading ? "var(--bg-muted)" : "var(--accent)",
+                color: loading ? "var(--ink-tertiary)" : "#fff",
+                boxShadow: loading ? "none" : "var(--shadow-cta)",
+              }}
+            >
+              {loading ? "..." : "send reset link"}
+            </button>
+          </div>
+          <p className="text-center mt-6 text-[13px] keepsy-rise keepsy-rise-3" style={{ color: "var(--ink-secondary)" }}>
+            <button type="button" onClick={() => { setShowReset(false); setError(""); }} className="font-medium" style={{ color: "var(--accent)" }}>
+              back to log in
+            </button>
+          </p>
+        </div>
+      </div>
+    );
   }
 
   // ─── Check-email success state ───
@@ -240,13 +354,22 @@ export default function LoginPage() {
                   (e.currentTarget.style.borderColor = "var(--line-strong)")
                 }
               />
-              {isSignup && (
+              {isSignup ? (
                 <p
                   className="text-[11px] mt-1.5 ml-1"
                   style={{ color: "var(--ink-tertiary)" }}
                 >
                   at least 6 characters
                 </p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); setShowReset(true); setError(""); }}
+                  className="text-[11px] mt-1.5 ml-1"
+                  style={{ color: "var(--ink-tertiary)" }}
+                >
+                  forgot password?
+                </button>
               )}
             </div>
           </div>
