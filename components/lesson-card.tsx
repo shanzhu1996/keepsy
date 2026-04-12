@@ -61,6 +61,7 @@ export default function LessonCard({
   const [cancelScope, setCancelScope] = useState<"this" | "future">("this");
   const [cancelCharge, setCancelCharge] = useState(false);
   const [nowTick, setNowTick] = useState<number>(() => Date.now());
+  const [showNotesNudge, setShowNotesNudge] = useState(false);
 
   const lessonDate = new Date(lesson.scheduled_at);
   const [editDate, setEditDate] = useState(
@@ -122,6 +123,18 @@ export default function LessonCard({
     const id = setInterval(() => setNowTick(Date.now()), 60_000);
     return () => clearInterval(id);
   }, []);
+
+  // One-time nudge: show popup for first finished lesson without notes
+  useEffect(() => {
+    const key = "keepsy:notes-nudge-shown";
+    if (typeof window === "undefined") return;
+    if (localStorage.getItem(key)) return;
+    const status = deriveTimeStatus(lesson, Date.now());
+    if (status === "finished" && !hasNotes(lesson)) {
+      setShowNotesNudge(true);
+      localStorage.setItem(key, "1");
+    }
+  }, [lesson]);
 
   function doRefresh() {
     router.refresh();
@@ -398,6 +411,66 @@ export default function LessonCard({
         )}
       </div>
       {renderSchedulingDialogs()}
+
+      {/* One-time notes nudge popup */}
+      {showNotesNudge && (
+        <>
+          <div
+            className="fixed inset-0 z-30"
+            style={{ backgroundColor: "rgba(0,0,0,0.3)" }}
+            onClick={() => setShowNotesNudge(false)}
+          />
+          <div
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-40 w-[min(320px,calc(100vw-48px))] rounded-[var(--radius-card)] px-6 py-6"
+            style={{
+              backgroundColor: "var(--bg-surface)",
+              boxShadow: "var(--shadow-popover)",
+            }}
+          >
+            <h3
+              className="font-display text-[22px] mb-2"
+              style={{ color: "var(--ink-primary)", letterSpacing: "-0.01em" }}
+            >
+              lesson complete!
+            </h3>
+            <p
+              className="text-[14px] leading-relaxed mb-5"
+              style={{ color: "var(--ink-secondary)" }}
+            >
+              want to capture notes? just talk or type a few sentences — keepsy writes the full report for you.
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowNotesNudge(false);
+                  goCapture();
+                }}
+                className="flex-1 h-10 text-[14px] font-semibold rounded-[var(--radius)]"
+                style={{
+                  backgroundColor: "var(--accent)",
+                  color: "#fff",
+                  boxShadow: "var(--shadow-cta)",
+                }}
+              >
+                write notes
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowNotesNudge(false)}
+                className="flex-1 h-10 text-[14px] font-medium rounded-[var(--radius)]"
+                style={{
+                  border: "1px solid var(--line-strong)",
+                  color: "var(--ink-secondary)",
+                  backgroundColor: "transparent",
+                }}
+              >
+                skip
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 
