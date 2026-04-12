@@ -3,6 +3,7 @@ import {
   getPaidPayments,
   getMonthlyIncomeSummary,
 } from "@/lib/payments";
+import { getProfile } from "@/lib/settings";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Payment } from "@/lib/types";
 import PaymentCard from "@/components/payment-card";
@@ -28,11 +29,14 @@ function groupByMonth(payments: Payment[]): { label: string; payments: Payment[]
 }
 
 export default async function PaymentsPage() {
-  const [outstanding, paid, monthlySummary] = await Promise.all([
+  const [outstanding, paid, monthlySummary, profile] = await Promise.all([
     getActiveCycles(),
     getPaidPayments(),
     getMonthlyIncomeSummary(),
+    getProfile(),
   ]);
+
+  const teacherName = profile?.name?.split(" ")[0] ?? null;
 
   const totalDue = outstanding
     .filter((c) => c.status === "overdue")
@@ -100,7 +104,7 @@ export default async function PaymentsPage() {
               )}
               <div className="space-y-3">
                 {outstanding.map((cycle) => (
-                  <OutstandingPaymentCard key={cycle.studentId} cycle={cycle} />
+                  <OutstandingPaymentCard key={cycle.studentId} cycle={cycle} teacherName={teacherName} />
                 ))}
               </div>
             </>

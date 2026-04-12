@@ -139,21 +139,36 @@ Respond in JSON:
 export async function generatePaymentReminder(
   studentName: string,
   amount: number,
-  lessonCount: number
+  lessonCount: number,
+  status: "due" | "overdue" = "due",
+  teacherName?: string | null,
+  dateRange?: string | null
 ): Promise<string> {
+  const firstName = studentName.split(" ")[0] || studentName;
+  const teacherFirst = teacherName?.split(" ")[0] ?? null;
+
+  const dateContext = dateRange ? ` The package period is ${dateRange}.` : "";
+  const context = status === "overdue"
+    ? `The student's current package of ${lessonCount} lessons has started but hasn't been paid for yet. This is a gentle follow-up.${dateContext}`
+    : `The student's next package of ${lessonCount} lessons is coming up and payment is due before it starts.${dateContext}`;
+
   const response = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
       {
         role: "system",
-        content: `You are an assistant for a private instructor. Generate a polite, friendly payment reminder message. Keep it brief (2-3 sentences). Don't be pushy. Include the amount and number of lessons covered.`,
+        content: `You are an assistant for a private instructor. Generate a polite, friendly payment reminder message for a student (or their parent). Keep it brief (2-3 sentences). Don't be pushy. Use "package" to refer to the bundle of lessons, not "session" or "cycle".
+
+${context}
+
+Address the message to ${firstName}. Include the amount ($${amount}) and that the package covers ${lessonCount} lessons.${teacherFirst ? ` Sign off with "— ${teacherFirst}".` : ""} Do not use subject lines or greetings like "Dear". Start casually with "Hi ${firstName}".`,
       },
       {
         role: "user",
-        content: `Student: ${studentName}, Amount: $${amount}, Lessons covered: ${lessonCount}`,
+        content: `Generate the payment reminder.`,
       },
     ],
-    temperature: 0.7,
+    temperature: 0.4,
     max_tokens: 200,
   });
 

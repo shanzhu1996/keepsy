@@ -5,13 +5,24 @@ export interface ActiveCycle {
   studentId: string;
   studentName: string;
   studentPhone: string | null;
+  studentEmail: string | null;
   cycleLength: number;
   /** Lessons taken in the current (unpaid) cycle. 0 = due but not started yet. */
   lessonsInUnpaidCycle: number;
   status: "due" | "overdue";
   amountDue: number;
+  /** For overdue: first and last unpaid lesson dates */
   cycleStartDate: string | null;
   cycleEndDate: string | null;
+  /** For due: dates of the last completed (paid) cycle */
+  lastCycleStartDate: string | null;
+  lastCycleEndDate: string | null;
+  /** Next scheduled lesson for this student */
+  nextLessonDate: string | null;
+  /** Last time a payment reminder was sent */
+  lastRemindedAt: string | null;
+  /** New student with 0 lessons and 0 payments */
+  isNewStudent: boolean;
 }
 
 /**
@@ -31,7 +42,7 @@ export async function getActiveCycles(): Promise<ActiveCycle[]> {
 
   const { data: students } = await supabase
     .from("students")
-    .select("id, name, phone, billing_cycle_lessons, cycle_price")
+    .select("id, name, phone, email, billing_cycle_lessons, cycle_price")
     .eq("user_id", user.id)
     .eq("billing_enabled", true)
     .eq("is_active", true)
@@ -41,7 +52,7 @@ export async function getActiveCycles(): Promise<ActiveCycle[]> {
 
   const ids = students.map((s) => s.id);
 
-  const [{ data: lessons }, { data: paidPayments }] = await Promise.all([
+  const [{ data: lessons }, { data: paidPayments }, { data: scheduledLessons }, { data: reminderLogs }] = await Promise.all([
     supabase
       .from("lessons")
       .select("student_id, scheduled_at")
@@ -53,6 +64,19 @@ export async function getActiveCycles(): Promise<ActiveCycle[]> {
       .select("student_id, lesson_count_covered")
       .in("student_id", ids)
       .eq("status", "paid"),
+    supabase
+      .from("lessons")
+      .select("student_id, scheduled_at")
+      .in("student_id", ids)
+      .eq("status", "scheduled")
+      .gte("scheduled_at", new Date().toISOString())
+      .order("scheduled_at", { ascending: true }),
+    supabase
+      .from("message_logs")
+      .select("student_id, sent_at")
+      .in("student_id", ids)
+      .eq("sent", true)
+      .order("sent_at", { ascending: false }),
   ]);
 
   const result: ActiveCycle[] = [];
@@ -89,25 +113,46 @@ export async function getActiveCycles(): Promise<ActiveCycle[]> {
     const status: "due" | "overdue" = isOverdue ? "overdue" : "due";
 
     // For overdue: show unpaid lessons range
-    // For due: no lessons in unpaid cycle yet
     let cycleStartDate: string | null = null;
     let cycleEndDate: string | null = null;
+    // For due: show last completed cycle dates
+    let lastCycleStartDate: string | null = null;
+    let lastCycleEndDate: string | null = null;
 
     if (isOverdue) {
       cycleStartDate = studentLessons[lessonsCovered]?.scheduled_at ?? null;
       cycleEndDate = studentLessons[totalCompleted - 1]?.scheduled_at ?? null;
     }
 
+    // Last paid cycle date range (for "due" context)
+    if (paidCycles > 0 && totalCompleted >= cycleLength) {
+      const lastCycleStart = (paidCycles - 1) * cycleLength;
+      const lastCycleEnd = lastCycleStart + cycleLength - 1;
+      lastCycleStartDate = studentLessons[lastCycleStart]?.scheduled_at ?? null;
+      lastCycleEndDate = studentLessons[lastCycleEnd]?.scheduled_at ?? null;
+    }
+
+    // Next scheduled lesson for this student
+    const nextLesson = (scheduledLessons ?? []).find((l) => l.student_id === student.id);
+    // Last reminder sent
+    const lastReminder = (reminderLogs ?? []).find((l) => l.student_id === student.id);
+
     result.push({
       studentId: student.id,
       studentName: student.name,
       studentPhone: student.phone,
+      studentEmail: student.email ?? null,
       cycleLength,
       lessonsInUnpaidCycle: unpaidLessons,
       status,
       amountDue: student.cycle_price ?? 0,
       cycleStartDate,
       cycleEndDate,
+      lastCycleStartDate,
+      lastCycleEndDate,
+      nextLessonDate: nextLesson?.scheduled_at ?? null,
+      lastRemindedAt: lastReminder?.sent_at ?? null,
+      isNewStudent,
     });
   }
 

@@ -4,7 +4,7 @@ import { generatePaymentReminder } from "@/lib/ai";
 
 export async function POST(request: Request) {
   try {
-    const { paymentId } = await request.json();
+    const body = await request.json();
     const supabase = await createClient();
 
     const {
@@ -14,33 +14,54 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data: payment, error } = await supabase
-      .from("payments")
-      .select("*, student:students(name)")
-      .eq("id", paymentId)
-      .eq("user_id", user.id)
-      .single();
+    let studentName: string;
+    let amount: number;
+    let lessonCount: number;
 
-    if (error || !payment) {
-      return NextResponse.json(
-        { error: "Payment not found" },
-        { status: 404 }
+    if (body.paymentId) {
+      // Existing payment record — look up details
+      const { data: payment, error } = await supabase
+        .from("payments")
+        .select("*, student:students(name)")
+        .eq("id", body.paymentId)
+        .eq("user_id", user.id)
+        .single();
+
+      if (error || !payment) {
+        return NextResponse.json(
+          { error: "Payment not found" },
+          { status: 404 }
+        );
+      }
+
+      studentName = payment.student?.name ?? "Student";
+      amount = Number(payment.amount);
+      lessonCount = payment.lesson_count_covered;
+
+      // Save draft to payment
+      const message = await generatePaymentReminder(studentName, amount, lessonCount);
+      await supabase
+        .from("payments")
+        .update({ message_draft: message })
+        .eq("id", body.paymentId);
+
+      return NextResponse.json({ message });
+    } else {
+      // Direct params — for due/overdue cycles without a payment record
+      studentName = body.studentName ?? "Student";
+      amount = Number(body.amount) || 0;
+      lessonCount = Number(body.lessonCount) || 0;
+
+      const message = await generatePaymentReminder(
+        studentName,
+        amount,
+        lessonCount,
+        body.status ?? "due",
+        body.teacherName ?? null,
+        body.dateRange ?? null
       );
+      return NextResponse.json({ message });
     }
-
-    const message = await generatePaymentReminder(
-      payment.student?.name ?? "Student",
-      Number(payment.amount),
-      payment.lesson_count_covered
-    );
-
-    // Save draft to payment
-    await supabase
-      .from("payments")
-      .update({ message_draft: message })
-      .eq("id", paymentId);
-
-    return NextResponse.json({ message });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Server error" },
