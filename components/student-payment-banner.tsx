@@ -61,10 +61,7 @@ export default function StudentPaymentBanner({
   return (
     <div>
       {/* Billing label */}
-      <h2
-        className="font-display text-[17px] mb-3"
-        style={{ color: "var(--ink-primary)", letterSpacing: "-0.01em" }}
-      >
+      <h2 className="font-label mb-3" style={{ color: "var(--ink-secondary)" }}>
         billing
       </h2>
       {/* Main billing row */}

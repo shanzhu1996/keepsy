@@ -22,6 +22,7 @@
   --color-ring: var(--accent);
   --font-sans: var(--font-geist-sans);
   --font-serif: var(--font-fraunces);
+  --font-label: var(--font-instrument);
 }
 
 :root {
@@ -121,6 +122,15 @@ main {
   font-feature-settings: "ss01", "ss02";
   font-variation-settings: "SOFT" 50, "opsz" 144;
 }
+/* Section label — Instrument Sans uppercase. Used for section headings on detail pages. */
+.font-label {
+  font-family: var(--font-label), var(--font-sans), sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .font-display-numerals {
   font-family: var(--font-serif), Georgia, serif;
   font-feature-settings: "tnum", "lnum", "ss01";

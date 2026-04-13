@@ -150,10 +150,7 @@ export default async function StudentDetailPage({
       {/* ═══ ZONE 2: CONTENT ═══ */}
       <div className="keepsy-rise keepsy-rise-2 mb-6">
         <div className="flex justify-between items-center mb-4">
-          <h2
-            className="font-display text-[17px]"
-            style={{ color: "var(--ink-primary)", letterSpacing: "-0.01em" }}
-          >
+          <h2 className="font-label" style={{ color: "var(--ink-secondary)" }}>
             lessons
           </h2>
           <AddLessonButton
