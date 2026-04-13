@@ -59,9 +59,7 @@ export default function StudentPaymentBanner({
   const emptyDotColor = "var(--line-subtle)";
 
   return (
-    <div
-      className={isOverdue ? "section-accent--overdue" : ""}
-    >
+    <div>
       {/* Main billing row */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

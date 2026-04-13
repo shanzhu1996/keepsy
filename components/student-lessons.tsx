@@ -32,7 +32,7 @@ export default function StudentLessons({ lessons, studentName }: StudentLessonsP
   if (lessons.length === 0) {
     return (
       <p className="text-sm py-4 font-display italic" style={{ color: "var(--ink-tertiary)" }}>
-        no lessons yet
+        no lessons yet — schedule one to get started
       </p>
     );
   }
@@ -45,17 +45,24 @@ export default function StudentLessons({ lessons, studentName }: StudentLessonsP
     })
     .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
 
-  const finished = lessons.filter((l) => {
-    const end = new Date(l.scheduled_at).getTime() + (l.duration_min ?? 60) * 60_000;
-    return end <= now || l.status === "cancelled";
-  });
+  const finished = lessons
+    .filter((l) => {
+      const end = new Date(l.scheduled_at).getTime() + (l.duration_min ?? 60) * 60_000;
+      return end <= now || l.status === "cancelled";
+    })
+    .sort((a, b) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime());
 
   const visibleUpcoming = showAllUpcoming ? upcoming : upcoming.slice(0, UPCOMING_PREVIEW_COUNT);
   const hiddenUpcomingCount = upcoming.length - UPCOMING_PREVIEW_COUNT;
 
+  // Count finished without notes for the nudge
+  const finishedWithoutNotes = finished.filter(
+    (l) => l.status !== "cancelled" && !l.raw_note
+  ).length;
+
   return (
     <div className="mb-4">
-      {/* ─── Timeline ─── */}
+      {/* ─── Upcoming timeline ─── */}
       {upcoming.length > 0 && (
         <div className="student-timeline">
           {visibleUpcoming.map((lesson, i) => {
@@ -65,38 +72,45 @@ export default function StudentLessons({ lessons, studentName }: StudentLessonsP
                 key={lesson.id}
                 className={`student-timeline-node ${isNext ? "student-timeline-node--next" : ""}`}
               >
-                <div className="flex items-baseline justify-between">
-                  <div className="flex items-baseline gap-2">
-                    <span
-                      className="font-display-numerals"
-                      style={{
-                        fontSize: isNext ? "15px" : "13px",
-                        fontWeight: isNext ? 600 : 400,
-                        color: isNext ? "var(--ink-primary)" : "var(--ink-tertiary)",
-                      }}
-                    >
-                      {formatShortDate(lesson.scheduled_at)}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: isNext ? "14px" : "12px",
-                        color: isNext ? "var(--ink-secondary)" : "var(--ink-tertiary)",
-                      }}
-                    >
-                      {formatTime(lesson.scheduled_at)}
-                    </span>
-                    {isNext && (
+                {isNext ? (
+                  /* Next lesson — dominant, with background */
+                  <div
+                    className="px-3 py-2 rounded-[10px] -ml-3"
+                    style={{ backgroundColor: "var(--accent-soft)" }}
+                  >
+                    <div className="flex items-baseline gap-2">
+                      <span
+                        className="font-display-numerals"
+                        style={{ fontSize: "16px", fontWeight: 600, color: "var(--accent-ink)" }}
+                      >
+                        {formatShortDate(lesson.scheduled_at)}
+                      </span>
+                      <span style={{ fontSize: "14px", fontWeight: 500, color: "var(--ink-primary)" }}>
+                        {formatTime(lesson.scheduled_at)}
+                      </span>
                       <span style={{ fontSize: "12px", color: "var(--ink-tertiary)" }}>
                         · {lesson.duration_min ?? 60} min
                       </span>
-                    )}
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  /* Later lessons — quiet */
+                  <div className="flex items-baseline gap-2">
+                    <span
+                      className="font-display-numerals"
+                      style={{ fontSize: "13px", color: "var(--ink-tertiary)" }}
+                    >
+                      {formatShortDate(lesson.scheduled_at)}
+                    </span>
+                    <span style={{ fontSize: "12px", color: "var(--ink-tertiary)", opacity: 0.7 }}>
+                      {formatTime(lesson.scheduled_at)}
+                    </span>
+                  </div>
+                )}
               </div>
             );
           })}
 
-          {/* Expand toggle inside timeline */}
           {hiddenUpcomingCount > 0 && (
             <div className="student-timeline-node" style={{ padding: "4px 0" }}>
               <button
@@ -112,33 +126,23 @@ export default function StudentLessons({ lessons, studentName }: StudentLessonsP
                   padding: 0,
                 }}
               >
-                {showAllUpcoming ? "show less" : `+ ${hiddenUpcomingCount} more`}
-                {" "}
-                <span
-                  style={{
-                    display: "inline-block",
-                    transition: "transform 0.2s",
-                    transform: showAllUpcoming ? "rotate(90deg)" : "rotate(0deg)",
-                  }}
-                >
-                  ›
-                </span>
+                {showAllUpcoming ? "show less" : `+ ${hiddenUpcomingCount} more ›`}
               </button>
             </div>
           )}
         </div>
       )}
 
-      {/* ─── Finished ─── */}
+      {/* ─── Finished — with notes nudge ─── */}
       {finished.length > 0 && (
-        <div className="mt-3">
+        <div className="mt-4">
           <button
             type="button"
             onClick={() => setShowFinished(!showFinished)}
             className="flex items-center gap-2 transition-colors"
             style={{ color: "var(--ink-secondary)", background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}
           >
-            <span style={{ fontSize: "12px", fontWeight: 500, letterSpacing: "0.03em" }}>
+            <span style={{ fontSize: "13px", fontWeight: 600, letterSpacing: "0.02em" }}>
               finished · {finished.length}
             </span>
             <span
@@ -151,10 +155,16 @@ export default function StudentLessons({ lessons, studentName }: StudentLessonsP
             >
               ›
             </span>
+            {/* Notes nudge — show how many lessons are missing notes */}
+            {finishedWithoutNotes > 0 && !showFinished && (
+              <span style={{ fontSize: "11px", color: "var(--accent-cool)", marginLeft: "4px" }}>
+                {finishedWithoutNotes} {finishedWithoutNotes === 1 ? "needs" : "need"} notes
+              </span>
+            )}
           </button>
 
           <div className="finished-collapse" data-open={showFinished ? "true" : "false"}>
-            <div className="mt-2 space-y-1">
+            <div className="mt-2 space-y-1.5">
               {finished.map((lesson) => {
                 const noteSnippet = extractNoteSnippet(lesson.raw_note);
                 const hasRawNote = !!lesson.raw_note;
@@ -164,7 +174,7 @@ export default function StudentLessons({ lessons, studentName }: StudentLessonsP
                   <Link
                     key={lesson.id}
                     href={hasRawNote ? `/lessons/${lesson.id}/notes` : `/lessons/${lesson.id}/capture`}
-                    className="block rounded-lg px-3 py-2 transition-colors"
+                    className="flex items-center justify-between rounded-[10px] px-3 py-2.5 transition-colors group"
                     style={{
                       backgroundColor: "var(--bg-surface)",
                       border: "1px solid var(--line-subtle)",
@@ -172,7 +182,7 @@ export default function StudentLessons({ lessons, studentName }: StudentLessonsP
                     onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--line-strong)")}
                     onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--line-subtle)")}
                   >
-                    <div className="flex items-baseline justify-between">
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-baseline gap-2">
                         <span
                           className="font-display-numerals text-[13px] font-medium"
@@ -181,22 +191,31 @@ export default function StudentLessons({ lessons, studentName }: StudentLessonsP
                             textDecoration: isCancelled ? "line-through" : "none",
                           }}
                         >
-                          {formatTime(lesson.scheduled_at)}
+                          {formatShortDate(lesson.scheduled_at)}
                         </span>
                         <span className="text-[12px]" style={{ color: "var(--ink-tertiary)" }}>
-                          {formatShortDate(lesson.scheduled_at)}
+                          {formatTime(lesson.scheduled_at)}
                         </span>
                         {isCancelled && (
                           <span className="text-[11px]" style={{ color: "var(--ink-tertiary)" }}>· cancelled</span>
                         )}
                       </div>
-                      <span className="text-[11px]" style={{ color: "var(--ink-tertiary)" }}>›</span>
+                      {noteSnippet && !isCancelled && (
+                        <p className="text-[12px] italic mt-0.5 truncate" style={{ color: "var(--ink-tertiary)" }}>
+                          {noteSnippet}
+                        </p>
+                      )}
                     </div>
-                    {noteSnippet && !isCancelled && (
-                      <p className="text-[12px] italic mt-0.5 truncate" style={{ color: "var(--ink-tertiary)" }}>
-                        {noteSnippet}
-                      </p>
-                    )}
+                    {/* Action hint */}
+                    <span
+                      className="text-[12px] font-medium flex-shrink-0 ml-3"
+                      style={{
+                        color: hasRawNote ? "var(--ink-tertiary)" : "var(--accent-cool)",
+                        fontWeight: hasRawNote ? 400 : 600,
+                      }}
+                    >
+                      {isCancelled ? "" : hasRawNote ? "view notes ›" : "write notes ›"}
+                    </span>
                   </Link>
                 );
               })}

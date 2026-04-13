@@ -146,36 +146,18 @@ export default async function StudentDetailPage({
           </p>
         )}
 
-        {/* Next / Last context rows */}
-        <div className="mt-3 space-y-1">
-          {nextLessonTime ? (
-            <div
-              className="flex items-center gap-2 px-3 py-2 rounded-[10px]"
-              style={{ backgroundColor: "var(--accent-soft)", borderLeft: "2px solid var(--accent)" }}
-            >
-              <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--accent-ink)", letterSpacing: "0.03em" }}>next</span>
-              <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--ink-primary)" }}>
-                {nextLessonTime} · {nextLessonDuration} min
-              </span>
-            </div>
-          ) : (
-            <div className="px-3 py-2 rounded-[10px]" style={{ backgroundColor: "var(--bg-muted)" }}>
-              <span style={{ fontSize: "13px", color: "var(--ink-tertiary)" }}>no upcoming lessons</span>
-            </div>
-          )}
-
-          {lastNoteSnippet && (
-            <Link
-              href={`/lessons/${lastCompletedWithNotes!.id}/notes`}
-              className="flex items-center gap-2 px-3 py-1.5 transition-colors"
-            >
-              <span style={{ fontSize: "12px", fontWeight: 500, color: "var(--ink-tertiary)" }}>last</span>
-              <span className="font-display text-[13px] italic truncate" style={{ color: "var(--ink-tertiary)", maxWidth: "280px" }}>
-                {lastNoteSnippet}
-              </span>
-            </Link>
-          )}
-        </div>
+        {/* Last lesson note snippet — links to notes */}
+        {lastNoteSnippet && (
+          <Link
+            href={`/lessons/${lastCompletedWithNotes!.id}/notes`}
+            className="flex items-center gap-2 mt-2 transition-colors"
+          >
+            <span style={{ fontSize: "12px", fontWeight: 500, color: "var(--ink-tertiary)" }}>last covered</span>
+            <span className="font-display text-[13px] italic truncate" style={{ color: "var(--ink-tertiary)", maxWidth: "260px" }}>
+              {lastNoteSnippet}
+            </span>
+          </Link>
+        )}
       </div>
 
       {/* ═══ LESSONS ═══ */}
