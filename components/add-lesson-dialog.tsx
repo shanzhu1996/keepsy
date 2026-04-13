@@ -262,7 +262,9 @@ export default function AddLessonDialog({
     const last = new Date(startDate);
     if (isMonthly) last.setMonth(last.getMonth() + (count - 1));
     else last.setDate(last.getDate() + intervalDays * (count - 1));
-    return last.toLocaleDateString([], { month: "short", day: "numeric" });
+    const startLabel = startDate.toLocaleDateString([], { month: "short", day: "numeric" });
+    const endLabel = last.toLocaleDateString([], { month: "short", day: "numeric" });
+    return `${startLabel} – ${endLabel}`;
   })();
 
   // "Suggested" prefill from last lesson
@@ -1193,7 +1195,7 @@ export default function AddLessonDialog({
               </span>
               {!saving && isRecurring && recurringEndLabel && (
                 <span style={{ fontSize: "12px", fontWeight: 400, opacity: 0.75 }}>
-                  ends {recurringEndLabel}
+                  {recurringEndLabel}
                 </span>
               )}
             </button>

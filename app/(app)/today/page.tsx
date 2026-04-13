@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,7 +18,6 @@ function localDateStr(d: Date = new Date()): string {
 
 export default function TodayPage() {
   const supabase = createClient();
-  const searchParams = useSearchParams();
   const [upcomingLessons, setUpcomingLessons] = useState<Lesson[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [showNewLesson, setShowNewLesson] = useState(false);
@@ -68,14 +66,15 @@ export default function TodayPage() {
 
   // Auto-open add lesson dialog if ?addLesson=studentId is in the URL
   useEffect(() => {
-    const addLessonStudent = searchParams.get("addLesson");
-    if (addLessonStudent && students.length > 0) {
+    if (typeof window === "undefined" || students.length === 0) return;
+    const params = new URLSearchParams(window.location.search);
+    const addLessonStudent = params.get("addLesson");
+    if (addLessonStudent) {
       setPreselectedStudentId(addLessonStudent);
       setShowNewLesson(true);
-      // Clean up the URL
       window.history.replaceState({}, "", "/today");
     }
-  }, [searchParams, students]);
+  }, [students]);
 
   const todayLessons = upcomingLessons
     .filter(
