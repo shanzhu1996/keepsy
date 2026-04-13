@@ -154,17 +154,7 @@ export default async function StudentDetailPage({
               </div>
             )}
           </div>
-          <Link
-            href={`/students/${id}/edit`}
-            className="text-xs font-medium"
-            style={{
-              color: "var(--ink-secondary)",
-              textDecoration: "underline",
-              textUnderlineOffset: "3px",
-            }}
-          >
-            edit
-          </Link>
+          {/* edit link moved to action bar below */}
         </div>
 
         {/* Notes — teacher's personal annotation */}
@@ -176,6 +166,45 @@ export default async function StudentDetailPage({
             {student.notes}
           </p>
         )}
+
+        {/* ─── Quick action bar ─── */}
+        <div className="flex gap-2 mt-3">
+          <AddLessonButton
+            studentId={id}
+            studentName={student.name}
+            defaultDuration={student.lesson_default_duration_min ?? undefined}
+            billingCycleLessons={student.billing_cycle_lessons}
+            variant="compact"
+          />
+          <a
+            href="#messages"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] transition-colors"
+            style={{
+              fontSize: "13px",
+              fontWeight: 500,
+              border: "1px solid var(--line-strong)",
+              backgroundColor: "var(--bg-surface)",
+              color: "var(--ink-primary)",
+            }}
+          >
+            <span style={{ fontSize: "14px" }}>💬</span>
+            message
+          </a>
+          <Link
+            href={`/students/${id}/edit`}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] transition-colors"
+            style={{
+              fontSize: "13px",
+              fontWeight: 500,
+              border: "1px solid var(--line-strong)",
+              backgroundColor: "var(--bg-surface)",
+              color: "var(--ink-primary)",
+            }}
+          >
+            <span style={{ fontSize: "14px" }}>✏️</span>
+            edit
+          </Link>
+        </div>
       </div>
 
       {/* ─── Billing ─── */}
@@ -212,19 +241,13 @@ export default async function StudentDetailPage({
         style={{ height: "1px", backgroundColor: "var(--line-strong)" }}
       />
 
-      <div className="flex justify-between items-center mb-3 keepsy-rise keepsy-rise-3">
+      <div className="mb-3 keepsy-rise keepsy-rise-3">
         <h2
           className="font-display text-lg"
           style={{ color: "var(--ink-primary)" }}
         >
           lessons
         </h2>
-        <AddLessonButton
-          studentId={id}
-          studentName={student.name}
-          defaultDuration={student.lesson_default_duration_min ?? undefined}
-          billingCycleLessons={student.billing_cycle_lessons}
-        />
       </div>
 
       <StudentLessons lessons={lessons} studentName={student.name} />
@@ -235,7 +258,7 @@ export default async function StudentDetailPage({
         style={{ height: "1px", backgroundColor: "var(--line-strong)" }}
       />
 
-      <div className="keepsy-rise keepsy-rise-4">
+      <div id="messages" className="keepsy-rise keepsy-rise-4">
         <StudentMessages
           messages={messageLogs}
           studentName={student.name}

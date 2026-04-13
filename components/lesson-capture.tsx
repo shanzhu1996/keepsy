@@ -203,35 +203,43 @@ export default function LessonCapture({
             <button
               type="button"
               onClick={() => setMode("voice")}
-              className="w-8 h-7 flex items-center justify-center rounded-full transition"
+              className="flex items-center gap-1.5 px-3 h-7 rounded-full transition"
               style={{
                 backgroundColor:
                   mode === "voice" ? "var(--accent)" : "transparent",
                 color: mode === "voice" ? "#fff" : "var(--ink-secondary)",
+                fontSize: "12px",
+                fontWeight: mode === "voice" ? 600 : 400,
+                border: "none",
+                cursor: "pointer",
               }}
-              aria-label="Voice mode"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
                 <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
                 <line x1="12" y1="19" x2="12" y2="22" />
               </svg>
+              voice
             </button>
             <button
               type="button"
               onClick={() => setMode("type")}
-              className="w-8 h-7 flex items-center justify-center rounded-full transition"
+              className="flex items-center gap-1.5 px-3 h-7 rounded-full transition"
               style={{
                 backgroundColor:
                   mode === "type" ? "var(--accent)" : "transparent",
                 color: mode === "type" ? "#fff" : "var(--ink-secondary)",
+                fontSize: "12px",
+                fontWeight: mode === "type" ? 600 : 400,
+                border: "none",
+                cursor: "pointer",
               }}
-              aria-label="Type mode"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
                 <path d="m15 5 4 4" />
               </svg>
+              type
             </button>
           </div>
         </div>

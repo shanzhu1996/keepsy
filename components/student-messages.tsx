@@ -308,7 +308,7 @@ export default function StudentMessages({
     }
   }
 
-  const [showSection, setShowSection] = useState(false);
+  const [showSection, setShowSection] = useState(true);
 
   return (
     <div>
