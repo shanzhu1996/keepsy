@@ -149,6 +149,12 @@ export default async function StudentDetailPage({
 
       {/* ═══ ZONE 2: CONTENT ═══ */}
       <div className="keepsy-rise keepsy-rise-2 mb-6">
+        <h2
+          className="font-display text-[17px] mb-4"
+          style={{ color: "var(--ink-primary)", letterSpacing: "-0.01em" }}
+        >
+          lessons
+        </h2>
         <StudentLessons
           lessons={lessons}
           studentName={student.name}
