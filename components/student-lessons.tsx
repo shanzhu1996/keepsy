@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import type { Lesson } from "@/lib/types";
 import { extractNoteSnippet } from "@/lib/note-utils";
-import AddLessonButton from "@/components/add-lesson-button";
 
 interface StudentLessonsProps {
   lessons: Lesson[];
@@ -16,41 +15,34 @@ interface StudentLessonsProps {
 
 const UPCOMING_PREVIEW_COUNT = 4;
 
+function fmtWeekdayDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString([], {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+}
+
 function fmtTime(dateStr: string): string {
   return new Date(dateStr)
     .toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
     .toLowerCase();
 }
 
-function fmtDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString([], { month: "short", day: "numeric" });
-}
-
 export default function StudentLessons({
   lessons,
   studentName,
   studentId,
-  defaultDuration,
-  billingCycleLessons,
 }: StudentLessonsProps) {
   const [showFinished, setShowFinished] = useState(false);
   const [showAllUpcoming, setShowAllUpcoming] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   if (lessons.length === 0) {
     return (
-      <div className="text-center py-8">
-        <p className="font-display text-[17px] italic" style={{ color: "var(--ink-tertiary)" }}>
-          no lessons yet
-        </p>
-        <div className="mt-3">
-          <AddLessonButton
-            studentId={studentId}
-            studentName={studentName}
-            defaultDuration={defaultDuration}
-            billingCycleLessons={billingCycleLessons}
-          />
-        </div>
-      </div>
+      <p className="font-display text-[15px] italic py-6" style={{ color: "var(--ink-tertiary)" }}>
+        no lessons yet — add one to get started
+      </p>
     );
   }
 
@@ -80,47 +72,74 @@ export default function StudentLessons({
         <div className="student-timeline mb-4">
           {visibleUpcoming.map((lesson, i) => {
             const isNext = i === 0;
+            const isExpanded = expandedId === lesson.id;
+
             return (
               <div
                 key={lesson.id}
                 className={`student-timeline-node ${isNext ? "student-timeline-node--next" : ""}`}
               >
-                {isNext ? (
-                  <div
-                    className="px-4 py-3 rounded-[12px] -ml-4"
-                    style={{
-                      backgroundColor: "var(--accent-soft)",
-                      borderLeft: "3px solid var(--accent)",
-                    }}
-                  >
-                    <div className="flex items-baseline gap-2 flex-wrap">
+                <div
+                  className="timeline-row"
+                  data-expanded={isExpanded}
+                  onClick={() => setExpandedId(isExpanded ? null : lesson.id)}
+                >
+                  <div className="flex items-baseline justify-between">
+                    <div className="flex items-baseline gap-1.5 flex-wrap">
                       <span
                         className="font-display-numerals"
-                        style={{ fontSize: "18px", fontWeight: 600, color: "var(--accent-ink)", letterSpacing: "-0.01em" }}
+                        style={{
+                          fontSize: isNext ? "16px" : "13px",
+                          fontWeight: isNext ? 600 : 500,
+                          color: isNext ? "var(--ink-primary)" : "var(--ink-secondary)",
+                          letterSpacing: "-0.01em",
+                        }}
                       >
-                        {fmtDate(lesson.scheduled_at)}
+                        {fmtWeekdayDate(lesson.scheduled_at)}
                       </span>
                       <span
-                        className="font-display-numerals"
-                        style={{ fontSize: "15px", fontWeight: 500, color: "var(--ink-primary)" }}
+                        style={{
+                          fontSize: isNext ? "14px" : "12px",
+                          color: isNext ? "var(--ink-secondary)" : "var(--ink-tertiary)",
+                        }}
                       >
-                        {fmtTime(lesson.scheduled_at)}
+                        · {fmtTime(lesson.scheduled_at)}
                       </span>
-                      <span style={{ fontSize: "13px", color: "var(--ink-secondary)" }}>
-                        · {lesson.duration_min ?? 60} min
-                      </span>
+                      {isNext && (
+                        <span style={{ fontSize: "12px", color: "var(--ink-tertiary)" }}>
+                          · {lesson.duration_min ?? 60} min
+                        </span>
+                      )}
                     </div>
                   </div>
-                ) : (
-                  <div className="flex items-baseline gap-2">
-                    <span className="font-display-numerals" style={{ fontSize: "13px", fontWeight: 500, color: "var(--ink-secondary)" }}>
-                      {fmtDate(lesson.scheduled_at)}
-                    </span>
-                    <span style={{ fontSize: "12px", color: "var(--ink-tertiary)" }}>
-                      {fmtTime(lesson.scheduled_at)}
-                    </span>
+
+                  {/* Actions — visible on hover (desktop) or tap (mobile) */}
+                  <div
+                    className="timeline-row-actions"
+                    style={{ gap: "12px", marginTop: "4px", paddingBottom: "2px" }}
+                  >
+                    <Link
+                      href="/today"
+                      className="text-[12px] transition-colors"
+                      style={{ color: "var(--ink-tertiary)", textDecoration: "underline", textUnderlineOffset: "3px" }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      modify
+                    </Link>
+                    <span className="text-[12px]" style={{ color: "var(--line-strong)" }}>·</span>
+                    <button
+                      type="button"
+                      className="text-[12px] transition-colors"
+                      style={{ color: "var(--ink-tertiary)", textDecoration: "underline", textUnderlineOffset: "3px", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // TODO: inline cancel with confirmation
+                      }}
+                    >
+                      cancel
+                    </button>
                   </div>
-                )}
+                </div>
               </div>
             );
           })}
@@ -139,43 +158,42 @@ export default function StudentLessons({
         </div>
       )}
 
-      {/* ── Finished header row — matches Today's "NOW" / "UP NEXT" label style ── */}
-      <div className="flex items-center gap-3 mt-2 mb-3">
-        <span
-          style={{
-            fontSize: "11px",
-            fontWeight: 600,
-            letterSpacing: "0.08em",
-            textTransform: "uppercase" as const,
-            color: "var(--ink-tertiary)",
-          }}
-        >
-          finished · {finished.length}
-          {finishedWithoutNotes > 0 && (
-            <span style={{ color: "var(--accent-cool)", marginLeft: "8px", fontWeight: 600 }}>
-              {finishedWithoutNotes} {finishedWithoutNotes === 1 ? "needs" : "need"} notes
-            </span>
-          )}
-        </span>
-        <span className="flex-1" style={{ height: "1px", background: "var(--line-subtle)" }} />
-        <AddLessonButton
-          studentId={studentId}
-          studentName={studentName}
-          defaultDuration={defaultDuration}
-          billingCycleLessons={billingCycleLessons}
-        />
-      </div>
-
-      {/* ── Finished lessons (collapsed) ── */}
+      {/* ── Finished — label is the toggle ── */}
       {finished.length > 0 && (
-        <div>
+        <div className="mt-3">
           <button
             type="button"
             onClick={() => setShowFinished(!showFinished)}
-            style={{ fontSize: "12px", fontWeight: 500, color: "var(--ink-secondary)", background: "none", border: "none", cursor: "pointer", padding: "2px 0" }}
+            className="flex items-center gap-2 transition-colors"
+            style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}
           >
-            {showFinished ? "hide" : "show"} finished lessons
-            <span style={{ marginLeft: "4px", display: "inline-block", transition: "transform 0.2s", transform: showFinished ? "rotate(90deg)" : "rotate(0deg)" }}>›</span>
+            <span
+              style={{
+                fontSize: "11px",
+                fontWeight: 600,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase" as const,
+                color: "var(--ink-tertiary)",
+              }}
+            >
+              Finished · {finished.length}
+            </span>
+            {finishedWithoutNotes > 0 && (
+              <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--accent-cool)" }}>
+                · {finishedWithoutNotes} {finishedWithoutNotes === 1 ? "needs" : "need"} notes
+              </span>
+            )}
+            <span
+              style={{
+                display: "inline-block",
+                transition: "transform 0.2s",
+                transform: showFinished ? "rotate(90deg)" : "rotate(0deg)",
+                fontSize: "12px",
+                color: "var(--ink-tertiary)",
+              }}
+            >
+              ›
+            </span>
           </button>
 
           <div className="finished-collapse" data-open={showFinished ? "true" : "false"}>
@@ -203,7 +221,7 @@ export default function StudentLessons({
                             textDecoration: isCancelled ? "line-through" : "none",
                           }}
                         >
-                          {fmtDate(lesson.scheduled_at)}
+                          {fmtWeekdayDate(lesson.scheduled_at)}
                         </span>
                         <span className="text-[12px]" style={{ color: "var(--ink-tertiary)" }}>
                           {fmtTime(lesson.scheduled_at)}

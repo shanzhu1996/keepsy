@@ -149,18 +149,24 @@ export default async function StudentDetailPage({
 
       {/* ═══ ZONE 2: CONTENT ═══ */}
       <div className="keepsy-rise keepsy-rise-2 mb-6">
-        <h2
-          className="font-display text-[17px] mb-4"
-          style={{ color: "var(--ink-primary)", letterSpacing: "-0.01em" }}
-        >
-          lessons
-        </h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2
+            className="font-display text-[17px]"
+            style={{ color: "var(--ink-primary)", letterSpacing: "-0.01em" }}
+          >
+            lessons
+          </h2>
+          <AddLessonButton
+            studentId={id}
+            studentName={student.name}
+            defaultDuration={student.lesson_default_duration_min ?? undefined}
+            billingCycleLessons={student.billing_cycle_lessons}
+          />
+        </div>
         <StudentLessons
           lessons={lessons}
           studentName={student.name}
           studentId={id}
-          defaultDuration={student.lesson_default_duration_min ?? undefined}
-          billingCycleLessons={student.billing_cycle_lessons}
         />
       </div>
 

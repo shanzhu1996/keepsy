@@ -210,13 +210,23 @@ main {
   background: var(--accent);
 }
 
-/* Micro-label for section headings */
-.micro-label {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-tertiary);
+/* Timeline row hover — reveal actions */
+.timeline-row {
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 4px 8px;
+  margin: -4px -8px;
+  transition: background-color 0.15s ease;
+}
+.timeline-row:hover {
+  background-color: rgba(165, 82, 42, 0.05);
+}
+.timeline-row-actions {
+  display: none;
+}
+.timeline-row:hover .timeline-row-actions,
+.timeline-row[data-expanded="true"] .timeline-row-actions {
+  display: flex;
 }
 
 /* Section accent lines */
