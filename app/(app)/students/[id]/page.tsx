@@ -181,7 +181,7 @@ export default async function StudentDetailPage({
 
       {/* Billing */}
       {student.billing_enabled ? (
-        <div className="mt-5 keepsy-rise keepsy-rise-3">
+        <div className="mt-8 pt-6 keepsy-rise keepsy-rise-3" style={{ borderTop: "1px solid var(--line-subtle)" }}>
           <StudentPaymentBanner
             student={student}
             billingStatus={billingStatus}
@@ -195,7 +195,7 @@ export default async function StudentDetailPage({
       ) : null}
 
       {/* Messages */}
-      <div className="mt-5 keepsy-rise keepsy-rise-4">
+      <div className="mt-8 pt-6 keepsy-rise keepsy-rise-4" style={{ borderTop: "1px solid var(--line-subtle)" }}>
         <StudentMessages
           messages={messageLogs}
           studentName={student.name}
@@ -212,7 +212,7 @@ export default async function StudentDetailPage({
       </div>
 
       {/* Payments */}
-      <div className="mt-5 mb-8">
+      <div className="mt-8 pt-6 mb-8" style={{ borderTop: "1px solid var(--line-subtle)" }}>
         <StudentPayments payments={payments} lastPaymentHint={lastPaymentHint} />
       </div>
     </div>
