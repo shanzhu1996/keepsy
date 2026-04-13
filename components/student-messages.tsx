@@ -358,7 +358,7 @@ export default function StudentMessages({
             className="text-[13px] font-medium transition-colors"
             style={{ color: "var(--accent)", background: "none", border: "none", cursor: "pointer", padding: 0 }}
           >
-            send message
+            send a reminder →
           </button>
         )}
       </div>

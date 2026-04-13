@@ -10,7 +10,7 @@ interface StudentLessonsProps {
   studentName: string;
 }
 
-const UPCOMING_PREVIEW_COUNT = 5;
+const UPCOMING_PREVIEW_COUNT = 3;
 
 function formatTime(dateStr: string): string {
   return new Date(dateStr)
