@@ -26,8 +26,10 @@ export default function StudentPayments({ payments, lastPaymentHint }: StudentPa
         className="flex items-baseline gap-2 mb-3"
         style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
       >
-        <span className="micro-label">payments</span>
-        <span style={{ fontSize: "11px", color: "var(--ink-tertiary)" }}>
+        <span style={{ fontSize: "14px", fontWeight: 500, color: "var(--ink-secondary)" }}>
+          payments
+        </span>
+        <span style={{ fontSize: "12px", color: "var(--ink-tertiary)" }}>
           {payments.length}
         </span>
         <span

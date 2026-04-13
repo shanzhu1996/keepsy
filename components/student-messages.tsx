@@ -320,9 +320,11 @@ export default function StudentMessages({
           className="flex items-baseline gap-2"
           style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
         >
-          <span className="micro-label">messages</span>
+          <span style={{ fontSize: "14px", fontWeight: 500, color: "var(--ink-secondary)" }}>
+            messages
+          </span>
           {messages.length > 0 && (
-            <span style={{ fontSize: "11px", color: "var(--ink-tertiary)" }}>
+            <span style={{ fontSize: "12px", color: "var(--ink-tertiary)" }}>
               {messages.length}
             </span>
           )}

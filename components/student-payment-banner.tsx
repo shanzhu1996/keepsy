@@ -62,9 +62,7 @@ export default function StudentPaymentBanner({
     <div>
       {/* Main billing row */}
       <div className="flex items-center justify-between">
-        <div>
-          <span className="micro-label">billing</span>
-          <div className="flex items-center gap-2 mt-1.5">
+        <div className="flex items-center gap-2.5">
             {/* Dot progress */}
             <div className="flex items-center gap-2">
               {Array.from({ length: cycleLength }, (_, i) => (
@@ -88,7 +86,6 @@ export default function StudentPaymentBanner({
               )}
             </span>
           </div>
-        </div>
 
         {isOverdue && !showManual && (
           <button
