@@ -176,20 +176,6 @@ export default async function StudentDetailPage({
             billingCycleLessons={student.billing_cycle_lessons}
             variant="compact"
           />
-          <a
-            href="#messages"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] transition-colors"
-            style={{
-              fontSize: "13px",
-              fontWeight: 500,
-              border: "1px solid var(--line-strong)",
-              backgroundColor: "var(--bg-surface)",
-              color: "var(--ink-primary)",
-            }}
-          >
-            <span style={{ fontSize: "14px" }}>💬</span>
-            message
-          </a>
           <Link
             href={`/students/${id}/edit`}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] transition-colors"
@@ -201,7 +187,6 @@ export default async function StudentDetailPage({
               color: "var(--ink-primary)",
             }}
           >
-            <span style={{ fontSize: "14px" }}>✏️</span>
             edit
           </Link>
         </div>

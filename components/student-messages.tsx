@@ -308,45 +308,60 @@ export default function StudentMessages({
     }
   }
 
-  const [showSection, setShowSection] = useState(true);
+  const [showSection, setShowSection] = useState(false);
 
   return (
     <div>
       {/* ─── Section heading ─── */}
-      <button
-        type="button"
-        onClick={() => setShowSection(!showSection)}
-        className="flex items-baseline gap-2 mb-3"
-        style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
-      >
-        <h2
-          className="font-display text-lg"
-          style={{ color: "var(--ink-primary)" }}
+      <div className="flex items-center justify-between mb-3">
+        <button
+          type="button"
+          onClick={() => setShowSection(!showSection)}
+          className="flex items-baseline gap-2"
+          style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
         >
-          messages
-        </h2>
-        {messages.length > 0 && (
-          <span style={{ fontSize: "13px", color: "var(--ink-secondary)" }}>
-            {messages.length}
+          <h2
+            className="font-display text-lg"
+            style={{ color: "var(--ink-primary)" }}
+          >
+            messages
+          </h2>
+          {messages.length > 0 && (
+            <span style={{ fontSize: "13px", color: "var(--ink-secondary)" }}>
+              {messages.length}
+            </span>
+          )}
+          <span
+            className="transition-transform"
+            style={{
+              color: "var(--ink-secondary)",
+              display: "inline-block",
+              transform: showSection ? "rotate(90deg)" : "rotate(0deg)",
+              fontSize: "14px",
+            }}
+          >
+            ›
           </span>
+          {!showSection && lastMessageHint && (
+            <span style={{ fontSize: "12px", color: "var(--ink-tertiary)", marginLeft: "4px" }}>
+              · {lastMessageHint}
+            </span>
+          )}
+        </button>
+        {!showSection && (studentPhone || studentEmail) && (
+          <button
+            type="button"
+            onClick={() => {
+              setShowSection(true);
+              openComposer("custom");
+            }}
+            className="text-[13px] font-medium transition-colors"
+            style={{ color: "var(--accent)", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+          >
+            send message
+          </button>
         )}
-        <span
-          className="transition-transform"
-          style={{
-            color: "var(--ink-secondary)",
-            display: "inline-block",
-            transform: showSection ? "rotate(90deg)" : "rotate(0deg)",
-            fontSize: "14px",
-          }}
-        >
-          ›
-        </span>
-        {!showSection && lastMessageHint && (
-          <span style={{ fontSize: "12px", color: "var(--ink-tertiary)", marginLeft: "4px" }}>
-            · {lastMessageHint}
-          </span>
-        )}
-      </button>
+      </div>
 
       <div
         className="finished-collapse"
