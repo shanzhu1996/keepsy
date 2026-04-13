@@ -62,6 +62,13 @@ export default function LessonCard({
   const [cancelCharge, setCancelCharge] = useState(false);
   const [nowTick, setNowTick] = useState<number>(() => Date.now());
   const [showNotesNudge, setShowNotesNudge] = useState(false);
+  const [showPackageNudge, setShowPackageNudge] = useState(false);
+  const [packageNudgeData, setPackageNudgeData] = useState<{
+    studentName: string;
+    studentId: string;
+  } | null>(null);
+  const [completing, setCompleting] = useState(false);
+  const [completed, setCompleted] = useState(lesson.status === "completed");
 
   const lessonDate = new Date(lesson.scheduled_at);
   const [editDate, setEditDate] = useState(
@@ -139,6 +146,35 @@ export default function LessonCard({
   function doRefresh() {
     router.refresh();
     onRefresh?.();
+  }
+
+  async function handleComplete() {
+    setCompleting(true);
+    try {
+      const res = await fetch("/api/lessons/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lessonId: lesson.id }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      const data = await res.json();
+      setCompleted(true);
+
+      // Show package nudge if package is complete and no future lessons
+      if (data.packageComplete && !data.hasFutureLessons) {
+        setPackageNudgeData({
+          studentName: data.studentName,
+          studentId: data.studentId,
+        });
+        setShowPackageNudge(true);
+      } else {
+        doRefresh();
+      }
+    } catch {
+      // silent — the lesson card will still show as finished
+    } finally {
+      setCompleting(false);
+    }
   }
 
   async function handleCancel() {
@@ -332,35 +368,61 @@ export default function LessonCard({
           );
         })()}
 
-        {/* Row 3: text-style CTA — only after the lesson ends */}
+        {/* Row 3: actions for finished lessons */}
         {timeStatus === "finished" && (() => {
-          // finished + empty → accent/600 (primary action)
-          // finished + noteExists → tertiary/500 (archival)
           const emphasize = !noteExists;
           return (
-            <button
-              type="button"
-              className={`lesson-cta ${emphasize ? "lesson-cta-write" : "lesson-cta-view"}`}
-              style={{
-                marginTop: "14px",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "4px",
-                fontSize: "14px",
-                lineHeight: "20px",
-                letterSpacing: "-0.005em",
-                color: emphasize ? "var(--accent-cool)" : "var(--ink-tertiary)",
-                fontWeight: emphasize ? 600 : 500,
-                background: "transparent",
-                border: "none",
-                padding: 0,
-              }}
-              onClick={goCapture}
-            >
-              <span style={{ textDecoration: "underline", textUnderlineOffset: "3px" }}>
-                {ctaLabel}
-              </span>
-            </button>
+            <div style={{ marginTop: "14px", display: "flex", alignItems: "center", gap: "16px" }}>
+              {/* Mark done button — only if not yet completed in DB */}
+              {!completed && (
+                <button
+                  type="button"
+                  onClick={handleComplete}
+                  disabled={completing}
+                  className="transition-colors"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    color: "var(--success)",
+                    background: "transparent",
+                    border: "none",
+                    padding: 0,
+                    cursor: "pointer",
+                  }}
+                >
+                  {completing ? "..." : "done ✓"}
+                </button>
+              )}
+              {completed && !noteExists && (
+                <span style={{ fontSize: "12px", color: "var(--success)" }}>✓</span>
+              )}
+              {/* Write/view notes */}
+              <button
+                type="button"
+                className={`lesson-cta ${emphasize ? "lesson-cta-write" : "lesson-cta-view"}`}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  fontSize: "14px",
+                  lineHeight: "20px",
+                  letterSpacing: "-0.005em",
+                  color: emphasize ? "var(--accent-cool)" : "var(--ink-tertiary)",
+                  fontWeight: emphasize ? 600 : 500,
+                  background: "transparent",
+                  border: "none",
+                  padding: 0,
+                }}
+                onClick={goCapture}
+              >
+                <span style={{ textDecoration: "underline", textUnderlineOffset: "3px" }}>
+                  {ctaLabel}
+                </span>
+              </button>
+            </div>
           );
         })()}
 
@@ -458,6 +520,66 @@ export default function LessonCard({
               <button
                 type="button"
                 onClick={() => setShowNotesNudge(false)}
+                className="flex-1 h-10 text-[14px] font-medium rounded-[var(--radius)]"
+                style={{
+                  border: "1px solid var(--line-strong)",
+                  color: "var(--ink-secondary)",
+                  backgroundColor: "transparent",
+                }}
+              >
+                skip
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Package complete nudge */}
+      {showPackageNudge && packageNudgeData && (
+        <>
+          <div
+            className="fixed inset-0 z-30"
+            style={{ backgroundColor: "rgba(0,0,0,0.3)" }}
+            onClick={() => { setShowPackageNudge(false); doRefresh(); }}
+          />
+          <div
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-40 w-[min(320px,calc(100vw-48px))] rounded-[var(--radius-card)] px-6 py-6"
+            style={{
+              backgroundColor: "var(--bg-surface)",
+              boxShadow: "var(--shadow-popover)",
+            }}
+          >
+            <h3
+              className="font-display text-[22px] mb-2"
+              style={{ color: "var(--ink-primary)", letterSpacing: "-0.01em" }}
+            >
+              package complete!
+            </h3>
+            <p
+              className="text-[14px] leading-relaxed mb-5"
+              style={{ color: "var(--ink-secondary)" }}
+            >
+              {packageNudgeData.studentName.split(" ")[0]} has finished their lessons. schedule the next batch?
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPackageNudge(false);
+                  router.push(`/today?addLesson=${packageNudgeData.studentId}`);
+                }}
+                className="flex-1 h-10 text-[14px] font-semibold rounded-[var(--radius)]"
+                style={{
+                  backgroundColor: "var(--accent)",
+                  color: "#fff",
+                  boxShadow: "var(--shadow-cta)",
+                }}
+              >
+                + add next lessons
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowPackageNudge(false); doRefresh(); }}
                 className="flex-1 h-10 text-[14px] font-medium rounded-[var(--radius)]"
                 style={{
                   border: "1px solid var(--line-strong)",

@@ -51,7 +51,7 @@ function toHHmm(iso: string) {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-const DURATION_OPTIONS = ["30", "45", "60", "90"];
+const DURATION_OPTIONS = ["30", "60", "90"];
 const COUNT_OPTIONS = ["4", "8", "12", "16", "24"];
 
 export default function AddLessonDialog({
@@ -963,7 +963,7 @@ export default function AddLessonDialog({
 
                  <div style={{ paddingLeft: "12px", borderLeft: "2px solid var(--line-subtle)" }}>
                   {/* Frequency chips */}
-                  <div className="flex flex-wrap gap-3">
+                  <div className="flex flex-wrap gap-2">
                     {[
                       { id: "weekly", label: "weekly" },
                       { id: "biweekly", label: "biweekly" },
@@ -984,9 +984,9 @@ export default function AddLessonDialog({
                           }}
                           className="transition-colors"
                           style={{
-                            padding: "8px 16px",
+                            padding: "6px 12px",
                             borderRadius: "10px",
-                            fontSize: "14px",
+                            fontSize: "13px",
                             fontWeight: 500,
                             border: selected ? "1px solid var(--accent)" : "1px solid var(--line-strong)",
                             backgroundColor: selected ? "var(--accent-soft)" : "var(--bg-surface)",
@@ -1013,7 +1013,7 @@ export default function AddLessonDialog({
                           }}
                           className="transition-colors"
                           style={{
-                            padding: "8px 14px",
+                            padding: "6px 12px",
                             borderRadius: "10px",
                             fontSize: "13px",
                             fontWeight: 500,

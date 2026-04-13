@@ -144,19 +144,16 @@ export default function StudentLessons({ lessons, studentName }: StudentLessonsP
       );
     }
 
-    // Upcoming row
+    // Upcoming row — no link, just display
     return (
-      <Link
+      <div
         key={lesson.id}
-        href={`/lessons/${lesson.id}/capture`}
-        className="flex items-center justify-between py-2 px-3 rounded-lg transition-colors"
+        className="flex items-center justify-between py-2 px-3 rounded-lg"
         style={{
           backgroundColor: "var(--bg-surface)",
           border: "1px solid var(--line-subtle)",
           marginBottom: "4px",
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--line-strong)")}
-        onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--line-subtle)")}
       >
         <div className="flex items-baseline gap-2">
           <span
@@ -176,9 +173,9 @@ export default function StudentLessons({ lessons, studentName }: StudentLessonsP
           className="text-xs"
           style={{ color: "var(--ink-tertiary)" }}
         >
-          ›
+          {new Date(lesson.scheduled_at).toLocaleDateString([], { month: "short", day: "numeric" })}
         </span>
-      </Link>
+      </div>
     );
   }
 

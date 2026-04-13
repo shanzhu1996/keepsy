@@ -54,10 +54,52 @@ export async function POST(request: Request) {
       user.id
     );
 
+    // Check if this completes a package and no future lessons exist
+    let packageComplete = false;
+    let hasFutureLessons = false;
+    let studentName = "";
+
+    if (lesson.student_id) {
+      const { data: student } = await supabase
+        .from("students")
+        .select("name, billing_enabled, billing_cycle_lessons")
+        .eq("id", lesson.student_id)
+        .single();
+
+      studentName = student?.name ?? "";
+
+      if (student?.billing_enabled && student?.billing_cycle_lessons) {
+        // Count completed lessons for this student
+        const { count } = await supabase
+          .from("lessons")
+          .select("id", { count: "exact", head: true })
+          .eq("student_id", lesson.student_id)
+          .eq("status", "completed");
+
+        const totalCompleted = count ?? 0;
+        packageComplete = totalCompleted > 0 && totalCompleted % student.billing_cycle_lessons === 0;
+      }
+
+      // Check for future scheduled lessons
+      const { data: future } = await supabase
+        .from("lessons")
+        .select("id")
+        .eq("student_id", lesson.student_id)
+        .eq("status", "scheduled")
+        .gt("scheduled_at", new Date().toISOString())
+        .limit(1);
+
+      hasFutureLessons = (future?.length ?? 0) > 0;
+    }
+
     return NextResponse.json({
       success: true,
       lesson: updated,
       paymentCreated: !!payment,
+      packageComplete,
+      hasFutureLessons,
+      studentName,
+      studentId: lesson.student_id,
     });
   } catch (err) {
     return NextResponse.json(

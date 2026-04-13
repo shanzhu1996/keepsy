@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,9 +19,11 @@ function localDateStr(d: Date = new Date()): string {
 
 export default function TodayPage() {
   const supabase = createClient();
+  const searchParams = useSearchParams();
   const [upcomingLessons, setUpcomingLessons] = useState<Lesson[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [showNewLesson, setShowNewLesson] = useState(false);
+  const [preselectedStudentId, setPreselectedStudentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);   // only true on first load
   const [refreshing, setRefreshing] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>(
@@ -63,6 +66,16 @@ export default function TodayPage() {
     fetchData();
   }, [fetchData]);
 
+  // Auto-open add lesson dialog if ?addLesson=studentId is in the URL
+  useEffect(() => {
+    const addLessonStudent = searchParams.get("addLesson");
+    if (addLessonStudent && students.length > 0) {
+      setPreselectedStudentId(addLessonStudent);
+      setShowNewLesson(true);
+      // Clean up the URL
+      window.history.replaceState({}, "", "/today");
+    }
+  }, [searchParams, students]);
 
   const todayLessons = upcomingLessons
     .filter(
@@ -137,7 +150,7 @@ export default function TodayPage() {
             border: "1px solid rgba(165, 82, 42, 0.14)",
           }}
         >
-          + New
+          + Lesson
         </Button>
       </div>
 
@@ -473,12 +486,18 @@ export default function TodayPage() {
       {/* New Lesson Dialog — shared component */}
       <AddLessonDialog
         open={showNewLesson}
-        onOpenChange={setShowNewLesson}
+        onOpenChange={(open) => {
+          setShowNewLesson(open);
+          if (!open) setPreselectedStudentId(null);
+        }}
+        studentId={preselectedStudentId ?? undefined}
+        studentName={preselectedStudentId ? students.find(s => s.id === preselectedStudentId)?.name : undefined}
         students={students}
         existingLessons={upcomingLessons}
         onCreated={() => {
           setSelectedStudent("");
           setStudentQuery("");
+          setPreselectedStudentId(null);
           fetchData(true);
         }}
       />
