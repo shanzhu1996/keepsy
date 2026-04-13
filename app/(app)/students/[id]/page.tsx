@@ -35,7 +35,6 @@ export default async function StudentDetailPage({
   // ── Derived data ──
   const now = new Date();
 
-  // Next upcoming lesson
   const upcomingLessons = lessons
     .filter((l) => new Date(l.scheduled_at) > now && l.status !== "cancelled")
     .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
@@ -48,7 +47,6 @@ export default async function StudentDetailPage({
     : undefined;
   const nextLessonDuration = nextLesson?.duration_min ?? 60;
 
-  // Last completed lesson with notes
   const completedLessons = lessons
     .filter((l) => l.status === "completed")
     .sort((a, b) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime());
@@ -57,7 +55,7 @@ export default async function StudentDetailPage({
     ? extractNoteSnippet(lastCompletedWithNotes.raw_note)
     : null;
 
-  // ── Billing cycle computation ──
+  // ── Billing ──
   const cycleLength = student.billing_cycle_lessons ?? 0;
   const sortedCompleted = [...completedLessons].sort(
     (a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()
@@ -99,13 +97,11 @@ export default async function StudentDetailPage({
 
   const amountDue = unpaidCompleteCycles > 0 ? (student.cycle_price ?? 0) : 0;
 
-  // Messages hint
   const lastMessage = messageLogs.find((m) => m.sent);
   const lastMessageHint = lastMessage
     ? `last ${lastMessage.type === "lesson_reminder" ? "reminder" : lastMessage.type === "payment_reminder" ? "payment" : "sent"} ${new Date(lastMessage.sent_at || lastMessage.created_at).toLocaleDateString([], { month: "short", day: "numeric" })}`
     : null;
 
-  // Payment hint
   const lastPaidPayment = payments.find((p) => p.status === "paid");
   const lastPaymentHint = lastPaidPayment?.paid_at
     ? `last paid ${new Date(lastPaidPayment.paid_at).toLocaleDateString([], { month: "short", day: "numeric" })}`
@@ -117,96 +113,64 @@ export default async function StudentDetailPage({
     <div>
       <SettingsTip hasBilling={student.billing_enabled && !!student.cycle_price} />
 
-      {/* ─── Header ─── */}
-      <div className="mb-4 keepsy-rise keepsy-rise-1">
+      {/* ═══ HEADER ═══ */}
+      <div className="mb-5 keepsy-rise keepsy-rise-1">
         <div className="flex justify-between items-start">
-          <Link
-            href="/students"
-            className="text-[13px] mb-2 inline-block"
-            style={{ color: "var(--ink-secondary)" }}
-          >
+          <Link href="/students" className="text-[13px] mb-2 inline-block" style={{ color: "var(--ink-secondary)" }}>
             ‹ students
           </Link>
           <Link
             href={`/students/${id}/edit`}
             className="text-[13px] font-medium"
-            style={{
-              color: "var(--ink-secondary)",
-              textDecoration: "underline",
-              textUnderlineOffset: "3px",
-            }}
+            style={{ color: "var(--ink-secondary)", textDecoration: "underline", textUnderlineOffset: "3px" }}
           >
             edit
           </Link>
         </div>
 
-        <h1
-          className="font-display text-2xl"
-          style={{ color: "var(--ink-primary)" }}
-        >
+        <h1 className="font-display text-2xl" style={{ color: "var(--ink-primary)" }}>
           {student.name.toLowerCase()}
         </h1>
 
         {(student.email || student.phone) && (
           <div className="flex items-center gap-1.5 mt-1 flex-wrap" style={{ fontSize: "13px", color: "var(--ink-tertiary)" }}>
             {student.email && <a href={`mailto:${student.email}`} className="contact-link">{student.email}</a>}
-            {student.email && student.phone && <span style={{ color: "var(--ink-tertiary)" }}>·</span>}
+            {student.email && student.phone && <span>·</span>}
             {student.phone && <a href={`tel:${student.phone}`} className="contact-link">{student.phone}</a>}
           </div>
         )}
 
         {student.notes && (
-          <p
-            className="font-display text-sm italic mt-2"
-            style={{ color: "var(--ink-tertiary)", lineHeight: 1.5 }}
-          >
+          <p className="font-display text-sm italic mt-2" style={{ color: "var(--ink-tertiary)", lineHeight: 1.5 }}>
             {student.notes}
           </p>
         )}
 
-        {/* ─── Next / Last info rows ─── */}
+        {/* Next / Last context rows */}
         <div className="mt-3 space-y-1">
           {nextLessonTime ? (
             <div
               className="flex items-center gap-2 px-3 py-2 rounded-[10px]"
-              style={{
-                backgroundColor: "var(--accent-soft)",
-                borderLeft: "2px solid var(--accent)",
-              }}
+              style={{ backgroundColor: "var(--accent-soft)", borderLeft: "2px solid var(--accent)" }}
             >
-              <span style={{ fontSize: "12px", fontWeight: 500, color: "var(--accent-ink)", textTransform: "lowercase" }}>
-                next
-              </span>
+              <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--accent-ink)", letterSpacing: "0.03em" }}>next</span>
               <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--ink-primary)" }}>
                 {nextLessonTime} · {nextLessonDuration} min
               </span>
             </div>
           ) : (
-            <div
-              className="flex items-center gap-2 px-3 py-2 rounded-[10px]"
-              style={{
-                backgroundColor: "var(--bg-muted)",
-              }}
-            >
-              <span style={{ fontSize: "13px", color: "var(--ink-tertiary)" }}>
-                no upcoming lessons
-              </span>
+            <div className="px-3 py-2 rounded-[10px]" style={{ backgroundColor: "var(--bg-muted)" }}>
+              <span style={{ fontSize: "13px", color: "var(--ink-tertiary)" }}>no upcoming lessons</span>
             </div>
           )}
 
           {lastNoteSnippet && (
             <Link
               href={`/lessons/${lastCompletedWithNotes!.id}/notes`}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-[10px] transition-colors"
-              style={{ backgroundColor: "transparent" }}
+              className="flex items-center gap-2 px-3 py-1.5 transition-colors"
             >
-              <span style={{ fontSize: "12px", fontWeight: 500, color: "var(--ink-tertiary)", textTransform: "lowercase" }}>
-                last
-              </span>
-              <span
-                className="font-display text-[13px] italic truncate"
-                style={{ color: "var(--ink-tertiary)", maxWidth: "280px" }}
-              >
+              <span style={{ fontSize: "12px", fontWeight: 500, color: "var(--ink-tertiary)" }}>last</span>
+              <span className="font-display text-[13px] italic truncate" style={{ color: "var(--ink-tertiary)", maxWidth: "280px" }}>
                 {lastNoteSnippet}
               </span>
             </Link>
@@ -214,43 +178,11 @@ export default async function StudentDetailPage({
         </div>
       </div>
 
-      {/* ─── Billing (compact) ─── */}
-      {student.billing_enabled && (
-        <div className="keepsy-rise keepsy-rise-2">
-          <StudentPaymentBanner
-            student={student}
-            billingStatus={billingStatus}
-            lessonsInCurrentCycle={lessonsInCurrentCycle}
-            isCurrentCycleComplete={isCurrentCycleComplete}
-            amountDue={amountDue}
-            cycleStartDate={cycleStartDate}
-            cycleEndDate={cycleEndDate}
-          />
-        </div>
-      )}
+      {/* ═══ LESSONS ═══ */}
+      <div style={{ height: "1px", backgroundColor: "var(--line-subtle)" }} />
 
-      {!student.billing_enabled && (
-        <div className="mb-3 keepsy-rise keepsy-rise-2">
-          <span className="text-xs" style={{ color: "var(--ink-tertiary)" }}>
-            billing off
-          </span>
-        </div>
-      )}
-
-      {/* ─── Progress Summary ─── */}
-      <StudentProgressSummary
-        summary={student.progress_summary}
-        updatedAt={student.progress_summary_updated_at}
-        lessonCount={lessonsWithNotes}
-      />
-
-      {/* ─── Lessons ─── */}
-      <div className="mt-4 mb-2" style={{ height: "1px", backgroundColor: "var(--line-subtle)" }} />
-
-      <div className="flex justify-between items-center mb-3 keepsy-rise keepsy-rise-3">
-        <h2 className="font-display text-lg" style={{ color: "var(--ink-primary)" }}>
-          lessons
-        </h2>
+      <div className="flex justify-between items-center mt-4 mb-3 keepsy-rise keepsy-rise-2">
+        <h2 className="font-display text-lg" style={{ color: "var(--ink-primary)" }}>lessons</h2>
         <AddLessonButton
           studentId={id}
           studentName={student.name}
@@ -261,10 +193,38 @@ export default async function StudentDetailPage({
 
       <StudentLessons lessons={lessons} studentName={student.name} />
 
-      {/* ─── Messages ─── */}
-      <div className="mt-4 mb-2" style={{ height: "1px", backgroundColor: "var(--line-subtle)" }} />
+      {/* ═══ BILLING (compact inline) ═══ */}
+      <div className="mt-4" style={{ height: "1px", backgroundColor: "var(--line-subtle)" }} />
 
-      <div id="messages" className="keepsy-rise keepsy-rise-4">
+      {student.billing_enabled ? (
+        <div className="mt-4 mb-1 keepsy-rise keepsy-rise-3">
+          <StudentPaymentBanner
+            student={student}
+            billingStatus={billingStatus}
+            lessonsInCurrentCycle={lessonsInCurrentCycle}
+            isCurrentCycleComplete={isCurrentCycleComplete}
+            amountDue={amountDue}
+            cycleStartDate={cycleStartDate}
+            cycleEndDate={cycleEndDate}
+          />
+        </div>
+      ) : (
+        <div className="mt-4 mb-1">
+          <span className="text-xs" style={{ color: "var(--ink-tertiary)" }}>billing off</span>
+        </div>
+      )}
+
+      {/* ═══ PROGRESS SUMMARY ═══ */}
+      <StudentProgressSummary
+        summary={student.progress_summary}
+        updatedAt={student.progress_summary_updated_at}
+        lessonCount={lessonsWithNotes}
+      />
+
+      {/* ═══ MESSAGES ═══ */}
+      <div className="mt-4" style={{ height: "1px", backgroundColor: "var(--line-subtle)" }} />
+
+      <div id="messages" className="mt-4 keepsy-rise keepsy-rise-4">
         <StudentMessages
           messages={messageLogs}
           studentName={student.name}
@@ -280,9 +240,12 @@ export default async function StudentDetailPage({
         />
       </div>
 
-      {/* ─── Payment history (always show) ─── */}
-      <div className="mt-4 mb-2" style={{ height: "1px", backgroundColor: "var(--line-subtle)" }} />
-      <StudentPayments payments={payments} lastPaymentHint={lastPaymentHint} />
+      {/* ═══ PAYMENTS (history, last) ═══ */}
+      <div className="mt-4" style={{ height: "1px", backgroundColor: "var(--line-subtle)" }} />
+
+      <div className="mt-4">
+        <StudentPayments payments={payments} lastPaymentHint={lastPaymentHint} />
+      </div>
     </div>
   );
 }

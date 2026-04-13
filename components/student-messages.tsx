@@ -348,18 +348,24 @@ export default function StudentMessages({
             </span>
           )}
         </button>
-        {!showSection && (studentPhone || studentEmail) && (
-          <button
-            type="button"
-            onClick={() => {
-              setShowSection(true);
-              openComposer("custom");
-            }}
-            className="text-[13px] font-medium transition-colors"
-            style={{ color: "var(--accent)", background: "none", border: "none", cursor: "pointer", padding: 0 }}
-          >
-            send a reminder →
-          </button>
+        {!showSection && (
+          (studentPhone || studentEmail) ? (
+            <button
+              type="button"
+              onClick={() => {
+                setShowSection(true);
+                openComposer("custom");
+              }}
+              className="text-[13px] font-medium transition-colors"
+              style={{ color: "var(--accent)", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+            >
+              send a reminder →
+            </button>
+          ) : (
+            <span style={{ fontSize: "12px", color: "var(--ink-tertiary)" }}>
+              add contact to send
+            </span>
+          )
         )}
       </div>
 
