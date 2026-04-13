@@ -52,7 +52,7 @@ function WheelColumn({
     return () => clearTimeout(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const snapTimer = useRef<ReturnType<typeof setTimeout>>();
+  const snapTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const handleScroll = useCallback(() => {
     if (snapTimer.current) clearTimeout(snapTimer.current);
     snapTimer.current = setTimeout(() => {
