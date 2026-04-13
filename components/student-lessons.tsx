@@ -69,7 +69,21 @@ export default function StudentLessons({
     <div>
       {/* ── Upcoming timeline ── */}
       {upcoming.length > 0 && (
-        <div className="student-timeline mb-4">
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-3">
+            <span
+              style={{
+                fontSize: "11px",
+                fontWeight: 600,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase" as const,
+                color: "var(--ink-tertiary)",
+              }}
+            >
+              Upcoming · {upcoming.length}
+            </span>
+          </div>
+          <div className="student-timeline">
           {visibleUpcoming.map((lesson, i) => {
             const isNext = i === 0;
             const isExpanded = expandedId === lesson.id;
@@ -155,6 +169,7 @@ export default function StudentLessons({
               </button>
             </div>
           )}
+          </div>
         </div>
       )}
 
