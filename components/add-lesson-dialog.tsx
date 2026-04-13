@@ -908,60 +908,58 @@ export default function AddLessonDialog({
 
             {/* ── Repeat ── */}
             <div ref={repeatRef} style={{ marginTop: "8px" }}>
-              {!isRecurring ? (
+              {/* Once vs Recurring toggle */}
+              <div className="flex gap-2 mb-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsRecurring(false);
+                    setShowRepeatsCustom(false);
+                    setShowCountCustom(false);
+                  }}
+                  className="transition-colors"
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: "10px",
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    border: !isRecurring ? "1px solid var(--accent)" : "1px solid var(--line-strong)",
+                    backgroundColor: !isRecurring ? "var(--accent-soft)" : "var(--bg-surface)",
+                    color: !isRecurring ? "var(--accent-ink)" : "var(--ink-primary)",
+                    cursor: "pointer",
+                  }}
+                >
+                  once
+                </button>
                 <button
                   type="button"
                   onClick={() => {
                     setIsRecurring(true);
-                    setRecurrenceRule("weekly");
-                    setRecurrenceCount(defaultCount);
+                    if (!recurrenceRule || recurrenceRule === "") setRecurrenceRule("weekly");
+                    if (!recurrenceCount || recurrenceCount === "0") setRecurrenceCount(defaultCount);
                   }}
                   className="transition-colors"
                   style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    padding: "7px 14px",
-                    backgroundColor: "transparent",
-                    border: "1px dashed var(--line-strong)",
-                    borderRadius: "var(--radius-chip)",
+                    padding: "6px 14px",
+                    borderRadius: "10px",
                     fontSize: "13px",
                     fontWeight: 500,
-                    color: "var(--ink-secondary)",
+                    border: isRecurring ? "1px solid var(--accent)" : "1px solid var(--line-strong)",
+                    backgroundColor: isRecurring ? "var(--accent-soft)" : "var(--bg-surface)",
+                    color: isRecurring ? "var(--accent-ink)" : "var(--ink-primary)",
                     cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "5px",
                   }}
                 >
                   <span style={{ fontSize: "14px", lineHeight: 1 }}>↻</span>
-                  make it recurring
+                  recurring
                 </button>
-              ) : (
+              </div>
+
+              {isRecurring ? (
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label
-                      style={{ fontSize: "12px", fontWeight: 500, color: "var(--ink-secondary)", textTransform: "lowercase", letterSpacing: "0.02em" }}
-                    >
-                      repeat
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsRecurring(false);
-                        setShowRepeatsCustom(false);
-                        setShowCountCustom(false);
-                      }}
-                      className="transition-colors"
-                      style={{
-                        background: "transparent",
-                        border: "none",
-                        fontSize: "12px",
-                        color: "var(--ink-tertiary)",
-                        padding: "2px 4px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      – just one lesson
-                    </button>
-                  </div>
 
                  <div style={{ paddingLeft: "12px", borderLeft: "2px solid var(--line-subtle)" }}>
                   {/* Frequency chips */}
@@ -1149,7 +1147,7 @@ export default function AddLessonDialog({
                  </div>
 
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
 
