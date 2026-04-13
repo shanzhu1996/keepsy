@@ -908,53 +908,52 @@ export default function AddLessonDialog({
 
             {/* ── Repeat ── */}
             <div ref={repeatRef} style={{ marginTop: "8px" }}>
-              {/* Once vs Recurring toggle */}
-              <div className="flex gap-2 mb-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsRecurring(false);
-                    setShowRepeatsCustom(false);
-                    setShowCountCustom(false);
-                  }}
-                  className="transition-colors"
-                  style={{
-                    padding: "6px 14px",
-                    borderRadius: "10px",
-                    fontSize: "13px",
-                    fontWeight: 500,
-                    border: !isRecurring ? "1px solid var(--accent)" : "1px solid var(--line-strong)",
-                    backgroundColor: !isRecurring ? "var(--accent-soft)" : "var(--bg-surface)",
-                    color: !isRecurring ? "var(--accent-ink)" : "var(--ink-primary)",
-                    cursor: "pointer",
-                  }}
-                >
-                  once
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsRecurring(true);
-                    if (!recurrenceRule || recurrenceRule === "") setRecurrenceRule("weekly");
-                    if (!recurrenceCount || recurrenceCount === "0") setRecurrenceCount(defaultCount);
-                  }}
-                  className="transition-colors"
-                  style={{
-                    padding: "6px 14px",
-                    borderRadius: "10px",
-                    fontSize: "13px",
-                    fontWeight: 500,
-                    border: isRecurring ? "1px solid var(--accent)" : "1px solid var(--line-strong)",
-                    backgroundColor: isRecurring ? "var(--accent-soft)" : "var(--bg-surface)",
-                    color: isRecurring ? "var(--accent-ink)" : "var(--ink-primary)",
-                    cursor: "pointer",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "5px",
-                  }}
-                >
-                  <span style={{ fontSize: "14px", lineHeight: 1 }}>↻</span>
+              {/* Recurring toggle — inline with label */}
+              <div className="flex items-center gap-3 mb-2">
+                <span style={{ fontSize: "12px", fontWeight: 500, color: "var(--ink-secondary)", textTransform: "lowercase", letterSpacing: "0.02em" }}>
                   recurring
+                </span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isRecurring}
+                  onClick={() => {
+                    const next = !isRecurring;
+                    if (next) {
+                      if (!recurrenceRule || recurrenceRule === "") setRecurrenceRule("weekly");
+                      if (!recurrenceCount || recurrenceCount === "0") setRecurrenceCount(defaultCount);
+                    } else {
+                      setShowRepeatsCustom(false);
+                      setShowCountCustom(false);
+                    }
+                    setIsRecurring(next);
+                  }}
+                  style={{
+                    position: "relative",
+                    width: "44px",
+                    height: "26px",
+                    borderRadius: "13px",
+                    border: "none",
+                    cursor: "pointer",
+                    backgroundColor: isRecurring ? "var(--accent)" : "var(--line-strong)",
+                    transition: "background-color 0.2s ease",
+                    padding: 0,
+                    flexShrink: 0,
+                  }}
+                >
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: "3px",
+                      left: isRecurring ? "21px" : "3px",
+                      width: "20px",
+                      height: "20px",
+                      borderRadius: "50%",
+                      backgroundColor: "#fff",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+                      transition: "left 0.2s ease",
+                    }}
+                  />
                 </button>
               </div>
 
