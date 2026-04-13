@@ -181,33 +181,42 @@ main {
 
 /* Student timeline */
 .student-timeline {
-  padding-left: 20px;
-  border-left: 2px solid var(--line-subtle);
+  padding-left: 22px;
+  border-left: 2px solid rgba(165, 82, 42, 0.18);
   position: relative;
 }
 .student-timeline-node {
   position: relative;
-  padding: 5px 0;
+  padding: 6px 0;
 }
 .student-timeline-node::before {
   content: '';
   position: absolute;
-  left: -25px;
+  left: -27px;
   top: 50%;
   transform: translateY(-50%);
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--line-strong);
+  background: var(--ink-tertiary);
 }
 .student-timeline-node--next {
-  padding: 8px 0;
+  padding: 10px 0;
 }
 .student-timeline-node--next::before {
   width: 12px;
   height: 12px;
-  left: -27px;
+  left: -29px;
   background: var(--accent);
+}
+
+/* Micro-label for section headings */
+.micro-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-tertiary);
 }
 
 /* Section accent lines */

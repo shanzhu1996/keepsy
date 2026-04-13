@@ -114,9 +114,9 @@ export default async function StudentDetailPage({
       <SettingsTip hasBilling={student.billing_enabled && !!student.cycle_price} />
 
       {/* ═══ HEADER ═══ */}
-      <div className="mb-5 keepsy-rise keepsy-rise-1">
+      <div className="mb-8 keepsy-rise keepsy-rise-1">
         <div className="flex justify-between items-start">
-          <Link href="/students" className="text-[13px] mb-2 inline-block" style={{ color: "var(--ink-secondary)" }}>
+          <Link href="/students" className="text-[13px] mb-3 inline-block" style={{ color: "var(--ink-secondary)" }}>
             ‹ students
           </Link>
           <Link
@@ -128,12 +128,21 @@ export default async function StudentDetailPage({
           </Link>
         </div>
 
-        <h1 className="font-display text-2xl" style={{ color: "var(--ink-primary)" }}>
+        <h1
+          className="font-display"
+          style={{
+            fontSize: "30px",
+            fontWeight: 400,
+            letterSpacing: "-0.02em",
+            color: "var(--ink-primary)",
+            lineHeight: "36px",
+          }}
+        >
           {student.name.toLowerCase()}
         </h1>
 
         {(student.email || student.phone) && (
-          <div className="flex items-center gap-1.5 mt-1 flex-wrap" style={{ fontSize: "13px", color: "var(--ink-tertiary)" }}>
+          <div className="flex items-center gap-1.5 mt-1.5 flex-wrap" style={{ fontSize: "13px", color: "var(--ink-tertiary)" }}>
             {student.email && <a href={`mailto:${student.email}`} className="contact-link">{student.email}</a>}
             {student.email && student.phone && <span>·</span>}
             {student.phone && <a href={`tel:${student.phone}`} className="contact-link">{student.phone}</a>}
@@ -141,30 +150,37 @@ export default async function StudentDetailPage({
         )}
 
         {student.notes && (
-          <p className="font-display text-sm italic mt-2" style={{ color: "var(--ink-tertiary)", lineHeight: 1.5 }}>
+          <p className="font-display text-sm italic mt-3" style={{ color: "var(--ink-tertiary)", lineHeight: 1.5 }}>
             {student.notes}
           </p>
         )}
-
-        {/* Last lesson note snippet — links to notes */}
-        {lastNoteSnippet && (
-          <Link
-            href={`/lessons/${lastCompletedWithNotes!.id}/notes`}
-            className="flex items-center gap-2 mt-2 transition-colors"
-          >
-            <span style={{ fontSize: "12px", fontWeight: 500, color: "var(--ink-tertiary)" }}>last covered</span>
-            <span className="font-display text-[13px] italic truncate" style={{ color: "var(--ink-tertiary)", maxWidth: "260px" }}>
-              {lastNoteSnippet}
-            </span>
-          </Link>
-        )}
       </div>
 
-      {/* ═══ LESSONS ═══ */}
-      <div style={{ height: "1px", backgroundColor: "var(--line-subtle)" }} />
+      {/* ═══ TIMELINE (no section heading — content speaks for itself) ═══ */}
+      <div className="keepsy-rise keepsy-rise-2">
+        <StudentLessons lessons={lessons} studentName={student.name} />
+      </div>
 
-      <div className="flex justify-between items-center mt-4 mb-3 keepsy-rise keepsy-rise-2">
-        <h2 className="font-display text-lg" style={{ color: "var(--ink-primary)" }}>lessons</h2>
+      {/* ═══ Notes-needed CTA ═══ */}
+      {(() => {
+        const finishedNoNotes = completedLessons.filter((l) => l.status !== "cancelled" && !l.raw_note);
+        if (finishedNoNotes.length === 0) return null;
+        const firstWithoutNotes = finishedNoNotes[0];
+        return (
+          <Link
+            href={`/lessons/${firstWithoutNotes.id}/capture`}
+            className="flex items-center gap-2 mt-2 mb-2 py-2 transition-colors"
+            style={{ color: "var(--accent-cool)" }}
+          >
+            <span style={{ fontSize: "13px", fontWeight: 600 }}>
+              {finishedNoNotes.length} {finishedNoNotes.length === 1 ? "lesson" : "lessons"} needs notes — write now ›
+            </span>
+          </Link>
+        );
+      })()}
+
+      {/* ═══ + lesson ═══ */}
+      <div className="flex justify-end mt-1 mb-2">
         <AddLessonButton
           studentId={id}
           studentName={student.name}
@@ -173,13 +189,11 @@ export default async function StudentDetailPage({
         />
       </div>
 
-      <StudentLessons lessons={lessons} studentName={student.name} />
-
-      {/* ═══ BILLING (compact inline) ═══ */}
-      <div className="mt-4" style={{ height: "1px", backgroundColor: "var(--line-subtle)" }} />
+      {/* ═══ BILLING ═══ */}
+      <div className="mt-6" style={{ height: "1px", backgroundColor: "var(--line-subtle)" }} />
 
       {student.billing_enabled ? (
-        <div className="mt-4 mb-1 keepsy-rise keepsy-rise-3">
+        <div className="mt-5 mb-1 keepsy-rise keepsy-rise-3">
           <StudentPaymentBanner
             student={student}
             billingStatus={billingStatus}
@@ -204,9 +218,9 @@ export default async function StudentDetailPage({
       />
 
       {/* ═══ MESSAGES ═══ */}
-      <div className="mt-4" style={{ height: "1px", backgroundColor: "var(--line-subtle)" }} />
+      <div className="mt-6" style={{ height: "1px", backgroundColor: "var(--line-subtle)" }} />
 
-      <div id="messages" className="mt-4 keepsy-rise keepsy-rise-4">
+      <div id="messages" className="mt-5 keepsy-rise keepsy-rise-4">
         <StudentMessages
           messages={messageLogs}
           studentName={student.name}
@@ -223,9 +237,9 @@ export default async function StudentDetailPage({
       </div>
 
       {/* ═══ PAYMENTS (history, last) ═══ */}
-      <div className="mt-4" style={{ height: "1px", backgroundColor: "var(--line-subtle)" }} />
+      <div className="mt-6" style={{ height: "1px", backgroundColor: "var(--line-subtle)" }} />
 
-      <div className="mt-4">
+      <div className="mt-5">
         <StudentPayments payments={payments} lastPaymentHint={lastPaymentHint} />
       </div>
     </div>

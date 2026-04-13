@@ -62,33 +62,32 @@ export default function StudentPaymentBanner({
     <div>
       {/* Main billing row */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h2 className="font-display text-lg" style={{ color: "var(--ink-primary)" }}>
-            billing
-          </h2>
+        <div>
+          <span className="micro-label">billing</span>
+          <div className="flex items-center gap-2 mt-1.5">
+            {/* Dot progress */}
+            <div className="flex items-center gap-2">
+              {Array.from({ length: cycleLength }, (_, i) => (
+                <span
+                  key={i}
+                  style={{
+                    width: "12px",
+                    height: "12px",
+                    borderRadius: "50%",
+                    backgroundColor: i < lessonsInCurrentCycle ? dotColor : emptyDotColor,
+                    display: "inline-block",
+                  }}
+                />
+              ))}
+            </div>
 
-          {/* Dot progress */}
-          <div className="flex items-center gap-1.5">
-            {Array.from({ length: cycleLength }, (_, i) => (
-              <span
-                key={i}
-                style={{
-                  width: "10px",
-                  height: "10px",
-                  borderRadius: "50%",
-                  backgroundColor: i < lessonsInCurrentCycle ? dotColor : emptyDotColor,
-                  display: "inline-block",
-                }}
-              />
-            ))}
+            <span style={{ fontSize: "14px", fontWeight: 500, color: isOverdue ? "var(--accent-ink)" : "var(--ink-secondary)" }}>
+              {lessonsInCurrentCycle} of {cycleLength}
+              {isOverdue && (
+                <span style={{ fontWeight: 700, marginLeft: "6px" }}>overdue</span>
+              )}
+            </span>
           </div>
-
-          <span style={{ fontSize: "13px", fontWeight: 500, color: isOverdue ? "var(--accent-ink)" : "var(--ink-secondary)" }}>
-            {lessonsInCurrentCycle} of {cycleLength}
-            {isOverdue && (
-              <span style={{ fontWeight: 600, marginLeft: "6px" }}>overdue</span>
-            )}
-          </span>
         </div>
 
         {isOverdue && !showManual && (

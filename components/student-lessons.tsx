@@ -73,36 +73,39 @@ export default function StudentLessons({ lessons, studentName }: StudentLessonsP
                 className={`student-timeline-node ${isNext ? "student-timeline-node--next" : ""}`}
               >
                 {isNext ? (
-                  /* Next lesson — dominant, with background */
+                  /* Next lesson — DOMINANT element */
                   <div
-                    className="px-3 py-2 rounded-[10px] -ml-3"
-                    style={{ backgroundColor: "var(--accent-soft)" }}
+                    className="px-4 py-3 rounded-[12px] -ml-4"
+                    style={{
+                      backgroundColor: "var(--accent-soft)",
+                      borderLeft: "3px solid var(--accent)",
+                    }}
                   >
-                    <div className="flex items-baseline gap-2">
+                    <div className="flex items-baseline gap-2 flex-wrap">
                       <span
                         className="font-display-numerals"
-                        style={{ fontSize: "16px", fontWeight: 600, color: "var(--accent-ink)" }}
+                        style={{ fontSize: "20px", fontWeight: 600, color: "var(--accent-ink)", letterSpacing: "-0.01em" }}
                       >
                         {formatShortDate(lesson.scheduled_at)}
                       </span>
-                      <span style={{ fontSize: "14px", fontWeight: 500, color: "var(--ink-primary)" }}>
+                      <span style={{ fontSize: "15px", fontWeight: 500, color: "var(--ink-primary)" }}>
                         {formatTime(lesson.scheduled_at)}
                       </span>
-                      <span style={{ fontSize: "12px", color: "var(--ink-tertiary)" }}>
+                      <span style={{ fontSize: "13px", color: "var(--ink-secondary)" }}>
                         · {lesson.duration_min ?? 60} min
                       </span>
                     </div>
                   </div>
                 ) : (
-                  /* Later lessons — quiet */
+                  /* Later lessons — subordinate but visible */
                   <div className="flex items-baseline gap-2">
                     <span
                       className="font-display-numerals"
-                      style={{ fontSize: "13px", color: "var(--ink-tertiary)" }}
+                      style={{ fontSize: "13px", fontWeight: 500, color: "var(--ink-secondary)" }}
                     >
                       {formatShortDate(lesson.scheduled_at)}
                     </span>
-                    <span style={{ fontSize: "12px", color: "var(--ink-tertiary)", opacity: 0.7 }}>
+                    <span style={{ fontSize: "12px", color: "var(--ink-tertiary)" }}>
                       {formatTime(lesson.scheduled_at)}
                     </span>
                   </div>
