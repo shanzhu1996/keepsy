@@ -373,32 +373,10 @@ export default function LessonCard({
           const emphasize = !noteExists;
           return (
             <div style={{ marginTop: "14px", display: "flex", alignItems: "center", gap: "16px" }}>
-              {/* Mark done button — only if not yet completed in DB */}
-              {!completed && (
-                <button
-                  type="button"
-                  onClick={handleComplete}
-                  disabled={completing}
-                  className="transition-colors"
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    fontSize: "13px",
-                    fontWeight: 600,
-                    color: "var(--success)",
-                    background: "transparent",
-                    border: "none",
-                    padding: 0,
-                    cursor: "pointer",
-                  }}
-                >
-                  {completing ? "..." : "done ✓"}
-                </button>
-              )}
-              {completed && !noteExists && (
-                <span style={{ fontSize: "12px", color: "var(--success)" }}>✓</span>
-              )}
+              {/* Completed indicator */}
+              <span style={{ fontSize: "12px", color: "var(--success)" }}>
+                {completed ? "done ✓" : "completing…"}
+              </span>
               {/* Write/view notes */}
               <button
                 type="button"

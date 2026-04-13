@@ -64,6 +64,33 @@ export default function TodayPage() {
     fetchData();
   }, [fetchData]);
 
+  // Auto-complete past lessons that are still "scheduled"
+  const autoCompleteRan = useRef(false);
+  useEffect(() => {
+    if (loading || autoCompleteRan.current) return;
+    autoCompleteRan.current = true;
+
+    const now = Date.now();
+    const pastScheduled = upcomingLessons.filter((l) => {
+      const endTime = new Date(l.scheduled_at).getTime() + (l.duration_min ?? 60) * 60_000;
+      return l.status === "scheduled" && endTime <= now;
+    });
+    if (pastScheduled.length === 0) return;
+
+    // Fire all complete calls in parallel, then refresh once
+    Promise.all(
+      pastScheduled.map((l) =>
+        fetch("/api/lessons/complete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lessonId: l.id }),
+        }).catch(() => {}) // silent on failure
+      )
+    ).then(() => {
+      if (pastScheduled.length > 0) fetchData(true);
+    });
+  }, [loading, upcomingLessons, fetchData]);
+
   // Auto-open add lesson dialog if ?addLesson=studentId is in the URL
   useEffect(() => {
     if (typeof window === "undefined" || students.length === 0) return;
