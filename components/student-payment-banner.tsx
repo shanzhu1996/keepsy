@@ -59,7 +59,9 @@ export default function StudentPaymentBanner({
   const emptyDotColor = "var(--line-subtle)";
 
   return (
-    <div>
+    <div
+      className={isOverdue ? "section-accent--overdue" : ""}
+    >
       {/* Main billing row */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -68,13 +70,13 @@ export default function StudentPaymentBanner({
           </h2>
 
           {/* Dot progress */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             {Array.from({ length: cycleLength }, (_, i) => (
               <span
                 key={i}
                 style={{
-                  width: "8px",
-                  height: "8px",
+                  width: "10px",
+                  height: "10px",
                   borderRadius: "50%",
                   backgroundColor: i < lessonsInCurrentCycle ? dotColor : emptyDotColor,
                   display: "inline-block",
@@ -83,29 +85,19 @@ export default function StudentPaymentBanner({
             ))}
           </div>
 
-          <span style={{ fontSize: "13px", color: "var(--ink-secondary)" }}>
+          <span style={{ fontSize: "13px", fontWeight: 500, color: isOverdue ? "var(--accent-ink)" : "var(--ink-secondary)" }}>
             {lessonsInCurrentCycle} of {cycleLength}
+            {isOverdue && (
+              <span style={{ fontWeight: 600, marginLeft: "6px" }}>overdue</span>
+            )}
           </span>
-
-          {isOverdue && (
-            <span
-              style={{
-                fontSize: "11px",
-                fontWeight: 600,
-                color: "var(--accent-ink)",
-                letterSpacing: "0.03em",
-              }}
-            >
-              overdue
-            </span>
-          )}
         </div>
 
         {isOverdue && !showManual && (
           <button
             onClick={() => setShowManual(true)}
             disabled={loading}
-            className="text-[12px] font-semibold px-2.5 py-1 rounded-[8px] transition-colors"
+            className="text-[12px] font-semibold px-3 py-1.5 rounded-[8px] transition-colors"
             style={{ backgroundColor: "var(--success)", color: "#fff" }}
           >
             paid ✓
