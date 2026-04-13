@@ -299,7 +299,7 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
           className="text-xs font-medium mb-3"
           style={{ color: "var(--ink-tertiary)", letterSpacing: "0.04em", textTransform: "uppercase" }}
         >
-          billing
+          package
         </p>
 
         <div className="mb-4">
@@ -307,7 +307,7 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
             className="text-sm font-medium mb-2 block"
             style={{ color: "var(--ink-secondary)" }}
           >
-            lessons per billing cycle
+            how many lessons?
           </label>
           <div className="flex gap-2 flex-wrap">
             {CYCLE_OPTIONS.map((opt) => (
@@ -380,7 +380,7 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
             className="text-sm font-medium mb-1.5 block"
             style={{ color: "var(--ink-secondary)" }}
           >
-            {billingCycleLessons === "1" ? "price per lesson" : "price per cycle"}
+            {billingCycleLessons === "1" ? "price" : `price for ${billingCycleLessons} lessons`}
           </label>
           <div className="relative">
             <span
@@ -398,14 +398,9 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
               style={{ ...inputStyle, paddingLeft: "24px" }}
               onFocus={(e) => (e.target.style.borderColor = "var(--accent)")}
               onBlur={(e) => (e.target.style.borderColor = "var(--line-strong)")}
-              placeholder="amount"
+              placeholder=""
             />
           </div>
-          {billingCycleLessons && billingCycleLessons !== "1" && (
-            <p className="text-xs mt-1" style={{ color: "var(--ink-tertiary)" }}>
-              charged every {billingCycleLessons} lessons
-            </p>
-          )}
         </div>
 
         {/* Mid-cycle onboarding — only for new students with cycle > 1 */}

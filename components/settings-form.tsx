@@ -141,7 +141,7 @@ export default function SettingsForm({ profile, authEmail }: SettingsFormProps) 
 
         <SectionHeader>defaults</SectionHeader>
         <SettingRow label="duration" value={displayDuration} />
-        <SettingRow label="billing" value={billingLabel} />
+        <SettingRow label="package" value={billingLabel} />
 
         <Divider />
 
@@ -257,7 +257,7 @@ export default function SettingsForm({ profile, authEmail }: SettingsFormProps) 
       {/* Billing cycle */}
       <div className="mb-4">
         <label className="text-sm font-medium mb-2 block" style={{ color: "var(--ink-secondary)" }}>
-          lessons per billing cycle
+          how many lessons?
         </label>
         <div className="flex gap-2 flex-wrap">
           {CYCLE_OPTIONS.map((opt) => (
@@ -304,7 +304,7 @@ export default function SettingsForm({ profile, authEmail }: SettingsFormProps) 
       {/* Price */}
       <div className="mb-5">
         <label className="text-sm font-medium mb-1.5 block" style={{ color: "var(--ink-secondary)" }}>
-          {defaultCycleLessons === "1" ? "price per lesson" : "price per cycle"}
+          {defaultCycleLessons === "1" ? "price" : `price for ${defaultCycleLessons} lessons`}
         </label>
         <div className="relative">
           <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm" style={{ color: "var(--ink-tertiary)" }}>$</span>
