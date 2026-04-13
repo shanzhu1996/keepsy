@@ -224,7 +224,7 @@ export default function StudentLessons({
                     key={lesson.id}
                     href={hasRawNote ? `/lessons/${lesson.id}/notes` : `/lessons/${lesson.id}/capture`}
                     className={`student-timeline-node timeline-row ${needsNotes ? "student-timeline-node--needs-notes" : ""} ${isCancelled ? "student-timeline-node--cancelled" : ""}`}
-                    style={{ display: "block", textDecoration: "none" }}
+                    style={{ display: "block", textDecoration: "none", position: "relative" }}
                   >
                     <div className="flex items-baseline justify-between">
                       <div className="flex items-baseline gap-1.5">
