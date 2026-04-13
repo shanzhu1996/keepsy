@@ -210,6 +210,21 @@ main {
   background: var(--accent);
 }
 
+/* Finished timeline — past lessons */
+.student-timeline--finished {
+  padding-left: 22px;
+  border-left: 2px solid var(--line-subtle);
+  position: relative;
+}
+.student-timeline-node--needs-notes::before {
+  background: var(--accent-cool) !important;
+}
+.student-timeline-node--cancelled::before {
+  background: var(--line-subtle) !important;
+  width: 6px !important;
+  height: 6px !important;
+}
+
 /* Timeline row hover — reveal actions */
 .timeline-row {
   cursor: pointer;

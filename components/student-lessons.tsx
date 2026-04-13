@@ -197,50 +197,59 @@ export default function StudentLessons({
           </button>
 
           <div className="finished-collapse" data-open={showFinished ? "true" : "false"}>
-            <div className="mt-2 space-y-1.5">
+            <div className="student-timeline--finished mt-2">
               {finished.map((lesson) => {
                 const noteSnippet = extractNoteSnippet(lesson.raw_note);
                 const hasRawNote = !!lesson.raw_note;
                 const isCancelled = lesson.status === "cancelled";
+                const needsNotes = !isCancelled && !hasRawNote;
 
                 return (
                   <Link
                     key={lesson.id}
                     href={hasRawNote ? `/lessons/${lesson.id}/notes` : `/lessons/${lesson.id}/capture`}
-                    className="flex items-center justify-between rounded-[10px] px-3 py-2.5 transition-colors"
-                    style={{ backgroundColor: "var(--bg-surface)", border: "1px solid var(--line-subtle)" }}
-                    onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--line-strong)")}
-                    onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--line-subtle)")}
+                    className={`student-timeline-node timeline-row ${needsNotes ? "student-timeline-node--needs-notes" : ""} ${isCancelled ? "student-timeline-node--cancelled" : ""}`}
+                    style={{ display: "block", textDecoration: "none" }}
                   >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-baseline gap-2">
+                    <div className="flex items-baseline justify-between">
+                      <div className="flex items-baseline gap-1.5">
                         <span
-                          className="font-display-numerals text-[13px] font-medium"
+                          className="font-display-numerals text-[13px]"
                           style={{
-                            color: isCancelled ? "var(--ink-tertiary)" : "var(--ink-primary)",
+                            fontWeight: needsNotes ? 600 : 500,
+                            color: isCancelled ? "var(--ink-tertiary)" : needsNotes ? "var(--ink-primary)" : "var(--ink-secondary)",
                             textDecoration: isCancelled ? "line-through" : "none",
                           }}
                         >
                           {fmtWeekdayDate(lesson.scheduled_at)}
                         </span>
                         <span className="text-[12px]" style={{ color: "var(--ink-tertiary)" }}>
-                          {fmtTime(lesson.scheduled_at)}
+                          · {fmtTime(lesson.scheduled_at)}
                         </span>
                         {isCancelled && <span className="text-[11px]" style={{ color: "var(--ink-tertiary)" }}>· cancelled</span>}
                       </div>
-                      {noteSnippet && !isCancelled && (
-                        <p className="text-[12px] italic mt-0.5 truncate" style={{ color: "var(--ink-tertiary)" }}>{noteSnippet}</p>
+
+                      {/* Action — always visible for needs-notes, hover for has-notes */}
+                      {!isCancelled && (
+                        <span
+                          className={`text-[12px] font-medium ${hasRawNote ? "timeline-row-actions" : ""}`}
+                          style={{
+                            color: needsNotes ? "var(--accent-cool)" : "var(--ink-tertiary)",
+                            fontWeight: needsNotes ? 600 : 400,
+                            ...(hasRawNote ? { display: undefined } : {}),
+                          }}
+                        >
+                          {needsNotes ? "write notes ›" : "view notes ›"}
+                        </span>
                       )}
                     </div>
-                    <span
-                      className="text-[12px] font-medium flex-shrink-0 ml-3"
-                      style={{
-                        color: hasRawNote ? "var(--ink-tertiary)" : "var(--accent-cool)",
-                        fontWeight: hasRawNote ? 400 : 600,
-                      }}
-                    >
-                      {isCancelled ? "" : hasRawNote ? "view notes ›" : "write notes ›"}
-                    </span>
+
+                    {/* Note snippet preview — only for lessons with notes */}
+                    {noteSnippet && !isCancelled && (
+                      <p className="text-[11px] italic mt-0.5 truncate" style={{ color: "var(--ink-tertiary)", opacity: 0.7 }}>
+                        {noteSnippet}
+                      </p>
+                    )}
                   </Link>
                 );
               })}
