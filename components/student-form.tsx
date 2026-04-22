@@ -49,8 +49,15 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
   const [notes, setNotes] = useState(student?.notes ?? "");
   const [lessonsRemaining, setLessonsRemaining] = useState("");
   const [showMidCycle, setShowMidCycle] = useState(false);
+  const [smsConsent, setSmsConsent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // If this student already has SMS consent on file, we don't re-prompt.
+  const consentOnFile = !!student?.sms_consent_given_at;
+  // Consent is required only when a phone number is set and we don't yet
+  // have it on file. Used to gate the submit button and the payload.
+  const needsConsent = !!phone.trim() && !consentOnFile;
 
   // Validation state — only show after blur
   const [emailTouched, setEmailTouched] = useState(false);
@@ -71,6 +78,10 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
       setError("please enter a valid phone number");
       return;
     }
+    if (needsConsent && !smsConsent) {
+      setError("please confirm you have permission to text this student");
+      return;
+    }
 
     setLoading(true);
     setError("");
@@ -83,7 +94,7 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
       ? Math.max(0, cycleLen - remaining)
       : 0;
 
-    const payload = {
+    const payload: Record<string, unknown> = {
       name,
       email: email || null,
       phone: phone || null,
@@ -99,6 +110,18 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
     };
 
     try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // Stamp consent fields when the teacher just confirmed it for a
+      // phone number that didn't have it on file before.
+      if (needsConsent && smsConsent) {
+        payload.sms_consent_given_at = new Date().toISOString();
+        payload.sms_consent_given_by = user.id;
+      }
+
       if (isEditing) {
         const { error } = await supabase
           .from("students")
@@ -107,11 +130,6 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
         if (error) throw error;
         router.push(`/students/${student.id}`);
       } else {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) throw new Error("Not authenticated");
-
         const { data, error } = await supabase
           .from("students")
           .insert({ ...payload, user_id: user.id })
@@ -228,6 +246,140 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
             </p>
           )}
         </div>
+
+        {/* SMS consent — required whenever a phone number is provided.
+            Twilio TFV compliance: we must capture a record that the teacher
+            obtained verbal consent before sending SMS to this number. */}
+        {phone.trim() && !consentOnFile && (
+          <div
+            className="consent-card mb-4 rounded-[12px] overflow-hidden"
+            style={{
+              backgroundColor: "var(--accent-soft)",
+              border: "1px solid rgba(165, 82, 42, 0.18)",
+            }}
+          >
+            {/* Header */}
+            <div
+              className="flex items-center gap-2 px-4 py-2.5"
+              style={{
+                borderBottom: "1px solid rgba(165, 82, 42, 0.15)",
+                color: "var(--accent-ink)",
+              }}
+            >
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                <path d="m9 12 2 2 4-4" />
+              </svg>
+              <span
+                className="font-label text-[10.5px]"
+                style={{ letterSpacing: "0.08em" }}
+              >
+                sms consent
+              </span>
+            </div>
+
+            {/* Body */}
+            <label className="flex items-start gap-3 px-4 py-3.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={smsConsent}
+                onChange={(e) => setSmsConsent(e.target.checked)}
+                className="sr-only"
+              />
+              <span
+                className="consent-checkbox-visual flex-shrink-0 mt-[2px]"
+                style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: 5,
+                  border: `1.5px solid ${
+                    smsConsent ? "var(--accent)" : "rgba(122, 54, 23, 0.35)"
+                  }`,
+                  backgroundColor: smsConsent ? "var(--accent)" : "transparent",
+                  transition:
+                    "background-color 150ms ease, border-color 150ms ease",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+                aria-hidden
+              >
+                {smsConsent && (
+                  <svg
+                    width="11"
+                    height="11"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#fff"
+                    strokeWidth="3.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
+                )}
+              </span>
+              <div
+                className="text-[13px] leading-[1.55]"
+                style={{ color: "var(--accent-ink)" }}
+              >
+                <p className="mb-1.5">
+                  By checking this, I confirm I&apos;ve told this student (or
+                  their parent/guardian):
+                </p>
+                <ul
+                  className="space-y-0.5"
+                  style={{ listStyle: "none", padding: 0, margin: 0 }}
+                >
+                  <ConsentBullet>
+                    Keepsy will text them lesson notes and reminders
+                    (frequency varies)
+                  </ConsentBullet>
+                  <ConsentBullet>msg &amp; data rates may apply</ConsentBullet>
+                  <ConsentBullet>
+                    they can reply <strong>STOP</strong> to opt out
+                  </ConsentBullet>
+                </ul>
+              </div>
+            </label>
+          </div>
+        )}
+        {phone.trim() && consentOnFile && student?.sms_consent_given_at && (
+          <div
+            className="mb-4 flex items-center gap-2 text-[12px]"
+            style={{ color: "var(--ink-tertiary)" }}
+          >
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="var(--success)"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M20 6 9 17l-5-5" />
+            </svg>
+            <span>
+              SMS consent on file &middot;{" "}
+              {new Date(student.sms_consent_given_at).toLocaleDateString(
+                undefined,
+                { year: "numeric", month: "short", day: "numeric" }
+              )}
+            </span>
+          </div>
+        )}
 
         {/* Preferred contact — only show when both phone and email exist */}
         {email.trim() && phone.trim() && (
@@ -516,7 +668,7 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
           <button
             type="submit"
             form="student-form"
-            disabled={loading || !name.trim()}
+            disabled={loading || !name.trim() || (needsConsent && !smsConsent)}
             className="flex-1 py-2.5 rounded-xl text-base font-medium transition-colors disabled:opacity-50"
             style={{ backgroundColor: "var(--accent)", color: "#fff" }}
           >
@@ -533,5 +685,18 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+function ConsentBullet({ children }: { children: React.ReactNode }) {
+  return (
+    <li className="relative pl-3.5 leading-[1.55]">
+      <span
+        aria-hidden
+        className="absolute top-[9px] w-1 h-1 rounded-full"
+        style={{ left: 0, backgroundColor: "var(--accent)", opacity: 0.55 }}
+      />
+      {children}
+    </li>
   );
 }

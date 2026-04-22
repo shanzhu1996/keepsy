@@ -1,5 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/service";
-import { sendSMS } from "@/lib/sms";
+import { sendSMSToStudent } from "@/lib/sms";
 import { sendEmail } from "@/lib/email";
 
 const isTwilioConfigured = () =>
@@ -126,7 +126,7 @@ export async function sendLessonReminders(hoursBeforeLesson = 24) {
     try {
       // Send via preferred contact method
       if (contactMethod === "sms" && student.phone && isTwilioConfigured()) {
-        await sendSMS(student.phone, message);
+        await sendSMSToStudent(supabase, student.id, student.phone, message);
         actuallySent = true;
       } else if (contactMethod === "email" && student.email && isResendConfigured()) {
         await sendEmail(
@@ -138,7 +138,7 @@ export async function sendLessonReminders(hoursBeforeLesson = 24) {
       }
       // Fallback: try the other channel if primary didn't work
       else if (student.phone && isTwilioConfigured()) {
-        await sendSMS(student.phone, message);
+        await sendSMSToStudent(supabase, student.id, student.phone, message);
         actuallySent = true;
       } else if (student.email && isResendConfigured()) {
         await sendEmail(
@@ -242,7 +242,7 @@ export async function sendLessonRemindersForUser(
 
     try {
       if (contactMethod === "sms" && student.phone && isTwilioConfigured()) {
-        await sendSMS(student.phone, message);
+        await sendSMSToStudent(supabase, student.id, student.phone, message);
         actuallySent = true;
       } else if (contactMethod === "email" && student.email && isResendConfigured()) {
         await sendEmail(
@@ -252,7 +252,7 @@ export async function sendLessonRemindersForUser(
         );
         actuallySent = true;
       } else if (student.phone && isTwilioConfigured()) {
-        await sendSMS(student.phone, message);
+        await sendSMSToStudent(supabase, student.id, student.phone, message);
         actuallySent = true;
       } else if (student.email && isResendConfigured()) {
         await sendEmail(

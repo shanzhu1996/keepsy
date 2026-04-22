@@ -35,6 +35,9 @@ export interface Student {
   progress_summary: string | null;
   progress_summary_updated_at: string | null;
   display_order: number;
+  sms_consent_given_at: string | null;
+  sms_consent_given_by: string | null;
+  first_sms_sent_at: string | null;
   created_at: string;
 }
 

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { sendSMS } from "@/lib/sms";
+import { sendSMSToStudent } from "@/lib/sms";
 
 export async function POST(
   _request: Request,
@@ -44,8 +44,8 @@ export async function POST(
       !!process.env.TWILIO_PHONE_NUMBER;
 
     let sentVia: "sms" | "copy" = "copy";
-    if (twilioConfigured && phone) {
-      await sendSMS(phone, message);
+    if (twilioConfigured && phone && student?.id) {
+      await sendSMSToStudent(supabase, student.id, phone, message);
       sentVia = "sms";
     }
 

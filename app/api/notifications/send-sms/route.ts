@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { sendSMS } from "@/lib/sms";
+import { sendSMS, sendSMSToStudent } from "@/lib/sms";
 
 export async function POST(request: Request) {
   try {
@@ -33,8 +33,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // Send SMS
-    const messageSid = await sendSMS(studentPhone, message);
+    // Send SMS — route through sendSMSToStudent when we have the studentId
+    // so the first-message opt-out footer is appended automatically. Rare
+    // edge case: if no studentId is provided, fall back to raw sendSMS.
+    const messageSid = studentId
+      ? await sendSMSToStudent(supabase, studentId, studentPhone, message)
+      : await sendSMS(studentPhone, message);
 
     // Log the message
     await supabase.from("message_logs").insert({
