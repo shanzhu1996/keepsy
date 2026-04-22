@@ -1,13 +1,15 @@
 import { LegalPage } from "@/components/public-shell";
+import { getLoggedIn } from "@/lib/auth-helpers";
 
 export const metadata = {
   title: "Privacy Policy — Keepsy",
   description: "How Keepsy collects, uses, and protects personal information.",
 };
 
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
+  const loggedIn = await getLoggedIn();
   return (
-    <LegalPage title="Privacy Policy" updated="April 21, 2026">
+    <LegalPage title="Privacy Policy" updated="April 21, 2026" loggedIn={loggedIn}>
       <p>
         Keepsy (&ldquo;Keepsy&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;) is a
         software service that helps private lesson teachers create and send

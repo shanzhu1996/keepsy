@@ -1,4 +1,5 @@
 import { LegalPage } from "@/components/public-shell";
+import { getLoggedIn } from "@/lib/auth-helpers";
 
 export const metadata = {
   title: "SMS Policy — Keepsy",
@@ -6,9 +7,10 @@ export const metadata = {
     "How Keepsy sends SMS messages on behalf of private lesson teachers, including opt-in, opt-out, and message frequency.",
 };
 
-export default function SmsPolicyPage() {
+export default async function SmsPolicyPage() {
+  const loggedIn = await getLoggedIn();
   return (
-    <LegalPage title="SMS Policy" updated="April 21, 2026">
+    <LegalPage title="SMS Policy" updated="April 21, 2026" loggedIn={loggedIn}>
       <p>
         This SMS Policy describes how Keepsy sends text messages on behalf of
         private lesson teachers. It is meant to help teachers who use Keepsy,

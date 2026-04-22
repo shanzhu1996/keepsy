@@ -1,13 +1,15 @@
 import { LegalPage } from "@/components/public-shell";
+import { getLoggedIn } from "@/lib/auth-helpers";
 
 export const metadata = {
   title: "Terms of Service — Keepsy",
   description: "Terms governing the use of Keepsy by private lesson teachers.",
 };
 
-export default function TermsPage() {
+export default async function TermsPage() {
+  const loggedIn = await getLoggedIn();
   return (
-    <LegalPage title="Terms of Service" updated="April 21, 2026">
+    <LegalPage title="Terms of Service" updated="April 21, 2026" loggedIn={loggedIn}>
       <p>
         These Terms of Service (&ldquo;Terms&rdquo;) govern your use of Keepsy
         (&ldquo;Keepsy&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;). By creating

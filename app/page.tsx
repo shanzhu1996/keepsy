@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PublicShell } from "@/components/public-shell";
 import { TodayMockup, NoteMockup } from "@/components/landing-mockups";
@@ -10,9 +9,7 @@ export default async function Home() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (user) {
-    redirect("/today");
-  }
+  const loggedIn = !!user;
 
   const subjects = [
     "Piano",
@@ -28,7 +25,7 @@ export default async function Home() {
   ];
 
   return (
-    <PublicShell>
+    <PublicShell loggedIn={loggedIn}>
       {/* Hero */}
       <section className="flex items-center justify-center px-6 py-20 sm:py-24">
         <div className="max-w-2xl text-center">
@@ -54,12 +51,20 @@ export default async function Home() {
             place.
           </p>
           <div className="flex items-center justify-center gap-3 keepsy-rise keepsy-rise-4">
-            <Link href="/login" className="btn-primary h-12 px-6 text-[15px]">
-              create an account
-            </Link>
-            <Link href="/login" className="btn-secondary h-12 px-6 text-[15px]">
-              log in
-            </Link>
+            {loggedIn ? (
+              <Link href="/today" className="btn-primary h-12 px-6 text-[15px]">
+                go to your dashboard &rarr;
+              </Link>
+            ) : (
+              <>
+                <Link href="/login" className="btn-primary h-12 px-6 text-[15px]">
+                  create an account
+                </Link>
+                <Link href="/login" className="btn-secondary h-12 px-6 text-[15px]">
+                  log in
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -194,11 +199,19 @@ export default async function Home() {
             Ready to reclaim<br />your evenings?
           </h2>
           <p className="text-[16px] leading-relaxed mb-8" style={{ color: "var(--ink-secondary)" }}>
-            Create an account in under a minute. No credit card.
+            {loggedIn
+              ? "Pick up where you left off."
+              : "Create an account in under a minute. No credit card."}
           </p>
-          <Link href="/login" className="btn-primary h-12 px-7 text-[15px]">
-            create an account
-          </Link>
+          {loggedIn ? (
+            <Link href="/today" className="btn-primary h-12 px-7 text-[15px]">
+              go to your dashboard &rarr;
+            </Link>
+          ) : (
+            <Link href="/login" className="btn-primary h-12 px-7 text-[15px]">
+              create an account
+            </Link>
+          )}
         </div>
       </section>
     </PublicShell>

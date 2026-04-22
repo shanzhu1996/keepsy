@@ -1,6 +1,12 @@
 import Link from "next/link";
 
-export function PublicShell({ children }: { children: React.ReactNode }) {
+export function PublicShell({
+  children,
+  loggedIn = false,
+}: {
+  children: React.ReactNode;
+  loggedIn?: boolean;
+}) {
   return (
     <div className="min-h-dvh flex flex-col" style={{ backgroundColor: "var(--bg-canvas)" }}>
       <header className="w-full border-b" style={{ borderColor: "var(--line-subtle)" }}>
@@ -13,16 +19,28 @@ export function PublicShell({ children }: { children: React.ReactNode }) {
             keepsy
           </Link>
           <nav className="flex items-center gap-5 text-[14px]" style={{ color: "var(--ink-secondary)" }}>
-            <Link href="/login" className="hover:underline" style={{ textUnderlineOffset: 3 }}>
-              log in
-            </Link>
-            <Link
-              href="/login"
-              className="h-9 px-4 inline-flex items-center rounded-[10px] text-[13px] font-semibold"
-              style={{ backgroundColor: "var(--accent)", color: "#fff", boxShadow: "var(--shadow-cta)" }}
-            >
-              get started
-            </Link>
+            {loggedIn ? (
+              <Link
+                href="/today"
+                className="h-9 px-4 inline-flex items-center rounded-[10px] text-[13px] font-semibold"
+                style={{ backgroundColor: "var(--accent)", color: "#fff", boxShadow: "var(--shadow-cta)" }}
+              >
+                go to your dashboard &rarr;
+              </Link>
+            ) : (
+              <>
+                <Link href="/login" className="hover:underline" style={{ textUnderlineOffset: 3 }}>
+                  log in
+                </Link>
+                <Link
+                  href="/login"
+                  className="h-9 px-4 inline-flex items-center rounded-[10px] text-[13px] font-semibold"
+                  style={{ backgroundColor: "var(--accent)", color: "#fff", boxShadow: "var(--shadow-cta)" }}
+                >
+                  get started
+                </Link>
+              </>
+            )}
           </nav>
         </div>
       </header>
@@ -73,13 +91,15 @@ export function LegalPage({
   title,
   updated,
   children,
+  loggedIn = false,
 }: {
   title: string;
   updated: string;
   children: React.ReactNode;
+  loggedIn?: boolean;
 }) {
   return (
-    <PublicShell>
+    <PublicShell loggedIn={loggedIn}>
       <article className="max-w-2xl mx-auto px-6 py-16">
         <h1
           className="font-display text-[40px] mb-3 keepsy-rise keepsy-rise-1"
