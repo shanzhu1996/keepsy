@@ -29,13 +29,17 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Redirect unauthenticated users to /login (except auth routes)
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/auth") &&
-    !request.nextUrl.pathname.startsWith("/reset-password")
-  ) {
+  // Public routes — accessible without auth.
+  // Includes marketing landing and legal pages that Twilio reviewers must reach.
+  const { pathname } = request.nextUrl;
+  const publicRoutes = ["/", "/privacy", "/terms", "/sms-policy"];
+  const isPublicRoute =
+    publicRoutes.includes(pathname) ||
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/reset-password");
+
+  if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

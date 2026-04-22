@@ -150,6 +150,12 @@ main {
 .keepsy-rise-3 { animation-delay: 160ms; }
 .keepsy-rise-4 { animation-delay: 240ms; }
 
+/* Live-status pulse — used on landing-page Today mockup "NOW" dot */
+@keyframes keepsy-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(1.4); }
+}
+
 /* Fade-up exit for capture page banner */
 @keyframes keepsy-fade-up {
   to { opacity: 0; transform: translateY(-4px); }
@@ -308,6 +314,118 @@ a:hover .note-clamp {
 .keepsy-editable-field:focus {
   border-bottom-color: var(--accent);
   border-bottom-style: solid;
+}
+
+/* SMS consent card — custom checkbox focus ring (a11y) */
+.consent-card:has(input:focus-visible) .consent-checkbox-visual {
+  box-shadow: 0 0 0 3px rgba(165, 82, 42, 0.22);
+}
+.consent-card ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Legal pages (privacy / terms / sms-policy) — readable long-form typography */
+.legal-body {
+  font-size: 15px;
+  line-height: 1.7;
+}
+.legal-body h2 {
+  font-family: var(--font-serif), Georgia, serif;
+  font-feature-settings: "ss01", "ss02";
+  font-size: 22px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--ink-primary);
+  margin-top: 2.25rem;
+  margin-bottom: 0.75rem;
+}
+.legal-body h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-primary);
+  margin-top: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+.legal-body p {
+  margin-bottom: 1rem;
+}
+.legal-body ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+  margin-bottom: 1rem;
+}
+.legal-body li {
+  margin-bottom: 0.4rem;
+}
+.legal-body a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.legal-body strong {
+  color: var(--ink-primary);
+  font-weight: 600;
+}
+
+/* Landing-page CTA buttons and subject chips — with hover states */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  box-shadow: var(--shadow-cta);
+  transition: background-color 160ms ease, transform 120ms ease, box-shadow 160ms ease;
+}
+.btn-primary:hover {
+  background-color: var(--accent-hover);
+  box-shadow:
+    0 2px 4px rgba(165, 82, 42, 0.14),
+    0 6px 14px -4px rgba(165, 82, 42, 0.22);
+}
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background-color: var(--bg-surface);
+  color: var(--ink-primary);
+  font-weight: 500;
+  border: 1px solid var(--line-strong);
+  transition: background-color 160ms ease, border-color 160ms ease, transform 120ms ease;
+}
+.btn-secondary:hover {
+  background-color: var(--bg-muted);
+  border-color: var(--ink-tertiary);
+}
+.btn-secondary:active {
+  transform: translateY(1px);
+}
+
+.subject-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  background-color: var(--bg-canvas);
+  border: 1px solid var(--line-strong);
+  color: var(--ink-secondary);
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+.subject-chip:hover {
+  background-color: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-ink);
 }
 
 /* Contact links — quiet by default, underline on hover */
