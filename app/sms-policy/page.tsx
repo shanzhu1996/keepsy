@@ -43,10 +43,10 @@ export default async function SmsPolicyPage() {
 
       <h2>3. Message frequency</h2>
       <p>
-        Frequency depends entirely on how often the teacher holds lessons and
-        chooses to send messages. A typical recipient can expect roughly
-        <strong> 4&ndash;10 messages per month</strong>, though the exact
-        number varies by teacher and student.
+        <strong>Message frequency varies</strong> by teacher and student,
+        depending on how often the teacher holds lessons and chooses to send
+        messages. Some recipients may receive a handful of messages per
+        month; others may receive more during active teaching periods.
       </p>
 
       <h2>4. How consent is obtained (opt-in)</h2>
@@ -64,13 +64,13 @@ export default async function SmsPolicyPage() {
         paddingLeft: "1rem",
         fontStyle: "italic",
       }}>
-        &ldquo;I use a tool called Keepsy to send lesson notes and
-        assignments after each lesson. With your permission, I&apos;ll send
-        these as text messages to this number. You&apos;ll receive lesson
-        recap texts and occasional scheduling or billing reminders, usually
-        around 4 to 10 per month. Message and data rates may apply. You can
-        reply STOP at any time to stop receiving messages, or reply HELP for
-        assistance. Is it okay if I text lesson notes to this number?&rdquo;
+        &ldquo;I use a tool called Keepsy to send lesson notes and reminders
+        after each lesson. With your permission, I&apos;ll send these as
+        text messages to [phone number]. You&apos;ll receive lesson recap
+        texts and occasional scheduling or billing reminders. Message and
+        data rates may apply. You can reply STOP at any time to stop
+        receiving messages, or reply HELP for assistance. Is it okay if I
+        text lesson notes to this number?&rdquo;
       </p>
 
       <h3>How consent is recorded</h3>
@@ -83,17 +83,16 @@ export default async function SmsPolicyPage() {
       <h2>5. How to opt out (STOP)</h2>
       <p>
         Recipients can stop receiving messages at any time by replying{" "}
-        <strong>STOP</strong> to any message sent through Keepsy. The STOP
-        request is processed automatically by our telecom provider (Twilio)
-        and is also recorded in Keepsy so the teacher cannot continue to
-        message that number. Other recognized opt-out keywords include
-        CANCEL, END, QUIT, UNSUBSCRIBE. Recipients will receive a final
-        confirmation that they have been unsubscribed.
+        <strong>STOP</strong> to any message sent through Keepsy. STOP
+        requests are processed automatically by our telecom provider
+        (Twilio), which blocks any further messages to that number at the
+        carrier level. Other recognized opt-out keywords include CANCEL,
+        END, QUIT, and UNSUBSCRIBE. Recipients receive a final confirmation
+        that they have been unsubscribed.
       </p>
       <p>
         Opted-out recipients can later opt back in by contacting their
-        teacher, who will send them a new consent request before messages
-        resume.
+        teacher, who will obtain renewed consent before messages resume.
       </p>
 
       <h2>6. How to get help (HELP)</h2>
