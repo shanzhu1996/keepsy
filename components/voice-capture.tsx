@@ -7,7 +7,6 @@ interface VoiceCaptureProps {
   studentFirstName: string;
   lang?: string;
   onComplete: (transcript: string) => void;
-  onStartOver?: () => void;
   onRecordingStart?: () => void;
   onSwitchToType?: () => void;
 }
@@ -41,7 +40,6 @@ export default function VoiceCapture({
   studentFirstName,
   lang = "en-US",
   onComplete,
-  onStartOver,
   onRecordingStart,
   onSwitchToType,
 }: VoiceCaptureProps) {
@@ -164,32 +162,19 @@ export default function VoiceCapture({
     } catch {
       /* ignore */
     }
-    // Fold any trailing interim text into finalText so it's editable.
-    if (interimRef.current.trim()) {
-      const merged =
-        (finalTextRef.current ? finalTextRef.current + " " : "") +
-        interimRef.current.trim();
-      finalTextRef.current = merged;
-      setFinalText(merged);
-      setInterim("");
-      interimRef.current = "";
+    // Merge any trailing interim text, then hand straight off to generate — no
+    // intermediate transcript-edit screen. The raw transcript is throwaway
+    // input for the AI; the teacher fixes the final report (not the transcript)
+    // on the Review screen.
+    const merged = (
+      (finalTextRef.current ? finalTextRef.current + " " : "") +
+      interimRef.current.trim()
+    ).trim();
+    if (merged) {
+      onComplete(merged);
+    } else {
+      setPhase("idle");
     }
-    setPhase("idle");
-  }
-
-  function handleStartOver() {
-    stoppedRef.current = true;
-    try {
-      recRef.current?.stop();
-    } catch {
-      /* ignore */
-    }
-    setFinalText("");
-    setInterim("");
-    finalTextRef.current = "";
-    interimRef.current = "";
-    setPhase("idle");
-    onStartOver?.();
   }
 
   if (!supported) {
@@ -242,7 +227,7 @@ export default function VoiceCapture({
             </div>
             <p
               className="text-base leading-relaxed whitespace-pre-wrap text-center"
-              style={{ color: "var(--ink-primary)" }}
+              style={{ color: "var(--ink-secondary)" }}
             >
               {finalText}
               {interim && (
@@ -250,29 +235,6 @@ export default function VoiceCapture({
               )}
             </p>
           </>
-        ) : finalText ? (
-          /* ─── Post-recording review ─── */
-          <div className="w-full pt-6">
-            <p
-              className="text-[11px] uppercase tracking-wide mb-2 text-center"
-              style={{ color: "var(--ink-tertiary)", letterSpacing: "0.06em" }}
-            >
-              review your notes
-            </p>
-            <textarea
-              value={finalText}
-              onChange={(e) => {
-                setFinalText(e.target.value);
-                finalTextRef.current = e.target.value;
-              }}
-              className="w-full min-h-[200px] text-base leading-relaxed rounded-lg p-3 outline-none"
-              style={{
-                backgroundColor: "var(--bg-surface)",
-                color: "var(--ink-primary)",
-                border: "1px solid var(--line-strong)",
-              }}
-            />
-          </div>
         ) : null}
       </div>
 
@@ -283,6 +245,12 @@ export default function VoiceCapture({
       >
         {isRecording ? (
           <>
+            <p
+              className="text-xs text-center px-2"
+              style={{ color: "var(--ink-tertiary)" }}
+            >
+              rough is fine — keepsy tidies it up
+            </p>
             <Button
               size="lg"
               className="w-full h-12 text-[15px] font-semibold"
@@ -299,43 +267,6 @@ export default function VoiceCapture({
             <p className="text-xs" style={{ color: "var(--ink-tertiary)" }}>
               listening…
             </p>
-          </>
-        ) : finalText ? (
-          <>
-            <Button
-              size="lg"
-              className="w-full h-12 text-[15px] font-semibold"
-              style={{
-                backgroundColor: "var(--accent)",
-                borderRadius: "var(--radius)",
-                boxShadow: "var(--shadow-cta)",
-                letterSpacing: "-0.005em",
-              }}
-              onClick={() => {
-                const text = finalTextRef.current.trim();
-                if (text) onComplete(text);
-              }}
-            >
-              write the report
-            </Button>
-            <div className="flex gap-4">
-              <button
-                type="button"
-                onClick={handleStart}
-                className="text-xs"
-                style={{ color: "var(--accent-ink)" }}
-              >
-                + continue recording
-              </button>
-              <button
-                type="button"
-                onClick={handleStartOver}
-                className="text-xs transition-colors"
-                style={{ color: "var(--ink-tertiary)" }}
-              >
-                start over
-              </button>
-            </div>
           </>
         ) : errorMsg ? (
           /* ─── Error state ─── */
