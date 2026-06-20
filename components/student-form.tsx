@@ -147,11 +147,11 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
   }
 
   const inputStyle: React.CSSProperties = {
-    backgroundColor: "var(--bg-surface)",
+    backgroundColor: "#FFFDF8",
     border: "1px solid var(--line-strong)",
     color: "var(--ink-primary)",
     borderRadius: "10px",
-    padding: "10px 14px",
+    padding: "11px 14px",
     fontSize: "15px",
     width: "100%",
     outline: "none",
@@ -199,7 +199,10 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
             className="text-sm font-medium mb-1.5 block"
             style={{ color: "var(--ink-secondary)" }}
           >
-            email
+            email{" "}
+            <span style={{ color: "var(--ink-tertiary)", fontWeight: 400 }}>
+              · optional
+            </span>
           </label>
           <input
             type="email"
@@ -431,7 +434,10 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
             className="text-sm font-medium mb-1.5 block"
             style={{ color: "var(--ink-secondary)" }}
           >
-            notes
+            notes{" "}
+            <span style={{ color: "var(--ink-tertiary)", fontWeight: 400 }}>
+              · optional
+            </span>
           </label>
           <input
             value={notes}
@@ -665,15 +671,29 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
         }}
       >
         <div className="flex gap-3">
-          <button
-            type="submit"
-            form="student-form"
-            disabled={loading || !name.trim() || (needsConsent && !smsConsent)}
-            className="flex-1 py-2.5 rounded-xl text-base font-medium transition-colors disabled:opacity-50"
-            style={{ backgroundColor: "var(--accent)", color: "#fff" }}
-          >
-            {loading ? "saving…" : isEditing ? "save changes" : "add student"}
-          </button>
+          {(() => {
+            const disabled =
+              loading || !name.trim() || (needsConsent && !smsConsent);
+            return (
+              <button
+                type="submit"
+                form="student-form"
+                disabled={disabled}
+                className="flex-1 h-12 rounded-xl text-[15px] font-medium transition-colors"
+                style={{
+                  backgroundColor: disabled ? "var(--bg-muted)" : "var(--accent)",
+                  color: disabled ? "var(--ink-tertiary)" : "#fff",
+                  boxShadow: disabled ? "none" : "var(--shadow-cta)",
+                }}
+              >
+                {loading
+                  ? "saving…"
+                  : isEditing
+                    ? "save changes"
+                    : "add student"}
+              </button>
+            );
+          })()}
           <button
             type="button"
             onClick={() => router.back()}
