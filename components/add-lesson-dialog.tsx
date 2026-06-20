@@ -470,7 +470,7 @@ export default function AddLessonDialog({
                         disabled={students.length === 0}
                         className="w-full flex items-center justify-between transition-colors"
                         style={{
-                          backgroundColor: "var(--bg-surface)",
+                          backgroundColor: "#FFFDF8",
                           border: studentOpen
                             ? "1px solid var(--accent)"
                             : "1px solid var(--line-strong)",
