@@ -45,6 +45,7 @@ export default function LessonResult({
   const [sendOpen, setSendOpen] = useState(false);
   const [sent, setSent] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Teacher's notes — free-form text (private observations)
@@ -260,6 +261,11 @@ export default function LessonResult({
 
   const canSendSMS = !!studentPhone;
   const canSendEmail = !!studentEmail;
+  const channelLabel = canSendSMS
+    ? "text message"
+    : canSendEmail
+      ? "email"
+      : "copy / PDF";
 
   return (
     <div className="fixed inset-0 bg-[var(--bg-canvas)] flex flex-col z-[60] overflow-y-auto">
@@ -304,59 +310,67 @@ export default function LessonResult({
 
       {/* Body */}
       <div className="flex-1 px-5 pt-5 pb-48 max-w-lg w-full mx-auto">
-        {/* ─── Teacher's Notes ─── */}
-        <div className="mb-6">
-          <div className="flex items-baseline justify-between mb-3">
-            <h2
-              className="text-[13px] font-semibold uppercase"
-              style={{ color: "var(--ink-secondary)", letterSpacing: "0.06em" }}
-            >
-              notes for teacher
-            </h2>
-            <span
-              className="text-[10px] font-medium px-2 py-0.5 rounded-full"
-              style={{
-                backgroundColor: "var(--bg-muted)",
-                color: "var(--ink-tertiary)",
-                letterSpacing: "0.02em",
-              }}
-            >
-              private · not sent
-            </span>
-          </div>
-          <textarea
-            ref={notesRef}
-            value={teacherNotes}
-            onChange={(e) => {
-              updateTeacherNotes(e.target.value);
-              autoResize();
-            }}
-            placeholder={`Summary of today's lesson, observations, things to remember...`}
-            className="keepsy-editable-field w-full text-[15px] px-0 py-1 outline-none resize-none bg-transparent"
+        {/* ─── Message to send (hero) ─── */}
+        <div className="flex items-center justify-between mb-2">
+          <h2
+            className="text-[12px] font-semibold uppercase"
+            style={{ color: "var(--accent-ink)", letterSpacing: "0.07em" }}
+          >
+            ready to send
+          </h2>
+        </div>
+        <div
+          style={{
+            backgroundColor: "var(--message-bg)",
+            borderRadius: "14px",
+            padding: "15px 16px",
+          }}
+        >
+          <p
+            className="text-[14px] whitespace-pre-wrap"
+            style={{ color: "var(--ink-primary)", lineHeight: 1.6 }}
+          >
+            {buildReportMessage()}
+          </p>
+          <p
+            className="text-[12px] mt-3 pt-3"
             style={{
-              color: "var(--ink-primary)",
-              lineHeight: "1.7",
-              minHeight: "72px",
+              color: "var(--ink-secondary)",
+              borderTop: "1px solid rgba(0,0,0,0.06)",
             }}
-          />
+          >
+            to {studentFirstName} · via {channelLabel}
+          </p>
         </div>
 
-        {/* ─── Lesson Report ─── */}
-        <div>
-          <div className="flex items-baseline justify-between mb-4">
-            <h2
-              className="text-[13px] font-semibold uppercase"
-              style={{ color: "var(--ink-secondary)", letterSpacing: "0.06em" }}
-            >
-              notes for {studentFirstName}
-            </h2>
-            <span
-              className="text-[11px]"
-              style={{ color: "var(--ink-tertiary)" }}
-            >
-              shared with student
-            </span>
-          </div>
+        {/* ─── The details (collapsible structured record) ─── */}
+        <button
+          type="button"
+          onClick={() => setShowDetails((v) => !v)}
+          className="w-full flex items-center gap-2 mt-5 mb-1 py-2"
+          style={{ borderTop: "1px solid var(--line-subtle)" }}
+        >
+          <span
+            className="text-[12px] font-semibold uppercase"
+            style={{ color: "var(--ink-secondary)", letterSpacing: "0.07em" }}
+          >
+            the details
+          </span>
+          <span
+            className="text-[12px]"
+            style={{ color: "var(--ink-tertiary)" }}
+          >
+            saved to {studentFirstName}&apos;s history
+          </span>
+          <span
+            className="ml-auto text-[13px]"
+            style={{ color: "var(--ink-tertiary)" }}
+          >
+            {showDetails ? "▴" : "▾"}
+          </span>
+        </button>
+        {showDetails && (
+        <div className="pt-2">
 
           <div className="space-y-5">
             {REPORT_SECTIONS.filter(({ key, optional }) => {
@@ -507,6 +521,55 @@ export default function LessonResult({
             </p>
           )}
         </div>
+        )}
+
+        {/* ─── Private note (never sent) ─── */}
+        <div
+          className="mt-6 rounded-xl p-3"
+          style={{
+            backgroundColor: "var(--bg-surface)",
+            border: "1px solid var(--line-subtle)",
+          }}
+        >
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ color: "var(--ink-tertiary)" }}
+              aria-hidden="true"
+            >
+              <rect x="3" y="11" width="18" height="11" rx="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            <span
+              className="text-[11px] font-semibold uppercase"
+              style={{ color: "var(--ink-tertiary)", letterSpacing: "0.06em" }}
+            >
+              private · only you
+            </span>
+          </div>
+          <textarea
+            ref={notesRef}
+            value={teacherNotes}
+            onChange={(e) => {
+              updateTeacherNotes(e.target.value);
+              autoResize();
+            }}
+            placeholder="Things to remember, observations — never sent to the student."
+            className="keepsy-editable-field w-full text-[14px] px-0 py-1 outline-none resize-none bg-transparent"
+            style={{
+              color: "var(--ink-primary)",
+              lineHeight: "1.6",
+              minHeight: "56px",
+            }}
+          />
+        </div>
 
         {error && (
           <p className="mt-3 text-[12px]" style={{ color: "var(--danger)" }}>
@@ -535,43 +598,43 @@ export default function LessonResult({
             </div>
           ) : (
             <>
-              <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setSendOpen(true)}
+                disabled={!hasCovered}
+                className="w-full h-12 text-[15px] font-semibold rounded-xl"
+                style={{
+                  backgroundColor: hasCovered ? "var(--accent)" : "var(--bg-muted)",
+                  color: hasCovered ? "#fff" : "var(--ink-tertiary)",
+                  boxShadow: hasCovered ? "var(--shadow-cta)" : "none",
+                  cursor: hasCovered ? "pointer" : "default",
+                }}
+              >
+                Send to {studentFirstName}
+              </button>
+              <div className="flex justify-center items-center gap-2 mt-2">
+                <span
+                  className="text-[12px]"
+                  style={{ color: "var(--ink-tertiary)" }}
+                >
+                  {hasCovered ? `via ${channelLabel}` : "add what you covered to send"}
+                </span>
+                <span
+                  className="text-[12px]"
+                  style={{ color: "var(--line-strong)" }}
+                >
+                  ·
+                </span>
                 <button
                   type="button"
                   onClick={handleSaveAndClose}
                   disabled={saving}
-                  className="flex-1 h-11 text-[14px] font-semibold rounded-xl"
-                  style={{
-                    backgroundColor: "var(--accent)",
-                    color: "#fff",
-                    boxShadow: "var(--shadow-cta)",
-                  }}
+                  className="text-[12px]"
+                  style={{ color: "var(--accent-ink)" }}
                 >
-                  {saving ? "saving..." : "save"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSendOpen(true)}
-                  disabled={!hasCovered}
-                  className="h-11 px-6 text-[14px] font-semibold rounded-xl"
-                  style={{
-                    backgroundColor: "transparent",
-                    color: hasCovered ? "var(--ink-primary)" : "var(--ink-tertiary)",
-                    border: `1px solid ${hasCovered ? "var(--line-strong)" : "var(--line-subtle)"}`,
-                    cursor: hasCovered ? "pointer" : "default",
-                  }}
-                >
-                  send to {studentFirstName}
+                  {saving ? "saving…" : "save & close"}
                 </button>
               </div>
-              {!hasCovered && (
-                <p
-                  className="text-[11px] text-center mt-1.5"
-                  style={{ color: "var(--ink-tertiary)" }}
-                >
-                  add what you covered to send
-                </p>
-              )}
             </>
           )}
         </div>
