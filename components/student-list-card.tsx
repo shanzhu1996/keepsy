@@ -155,7 +155,7 @@ export default function StudentListCard({
             >
               <div className="flex justify-between items-center">
                 <h3
-                  className="font-semibold text-[15px] leading-tight"
+                  className="font-display text-[17px] leading-tight"
                   style={{ color: "var(--ink-primary)" }}
                 >
                   {student.name}
