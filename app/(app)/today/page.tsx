@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LessonCard from "@/components/lesson-card";
+import TodayNow from "@/components/today-now";
 import CalendarPicker from "@/components/calendar-picker";
 import AddLessonDialog from "@/components/add-lesson-dialog";
 import type { Lesson, Student } from "@/lib/types";
@@ -27,7 +29,6 @@ export default function TodayPage() {
   const [selectedDate, setSelectedDate] = useState<string>(
     localDateStr()
   );
-  const [showFinished, setShowFinished] = useState(true);
   const [activeTab, setActiveTab] = useState<"today" | "calendar">("today");
   const [scheduleViewYear, setScheduleViewYear] = useState(() => new Date().getFullYear());
   const [scheduleViewMonth, setScheduleViewMonth] = useState(() => new Date().getMonth());
@@ -241,146 +242,7 @@ export default function TodayPage() {
               </p>
             )
           ) : (
-            (() => {
-              const now = Date.now();
-              const endOf = (l: Lesson) =>
-                new Date(l.scheduled_at).getTime() + (l.duration_min ?? 60) * 60_000;
-              const inProgress = todayLessons.filter(
-                (l) => new Date(l.scheduled_at).getTime() <= now && endOf(l) > now
-              );
-              const upcoming = todayLessons.filter(
-                (l) => new Date(l.scheduled_at).getTime() > now
-              );
-              const finished = todayLessons.filter((l) => endOf(l) <= now);
-              // Anchor = first in-progress card if any, else next upcoming
-              const anchorId = inProgress[0]?.id ?? upcoming[0]?.id;
-              return (
-                <>
-                  {inProgress.length === 0 && upcoming.length === 0 && finished.length > 0 && (
-                    <p
-                      className="text-center py-6"
-                      style={{ fontSize: "14px", color: "var(--ink-secondary)" }}
-                    >
-                      All done for today — {finished.length} {finished.length === 1 ? "lesson" : "lessons"} wrapped. ✓
-                    </p>
-                  )}
-                  {inProgress.length > 0 && (
-                    <div>
-                      <div
-                        className="flex items-center gap-3 mb-4"
-                        style={{ color: "var(--ink-tertiary)" }}
-                      >
-                        <span
-                          style={{
-                            fontSize: "11px",
-                            fontWeight: 600,
-                            letterSpacing: "0.08em",
-                            textTransform: "uppercase",
-                            color: "var(--accent-ink)",
-                          }}
-                        >
-                          Now
-                        </span>
-                        <span
-                          className="flex-1"
-                          style={{ height: "1px", background: "var(--line-subtle)" }}
-                        />
-                      </div>
-                      <div className="space-y-3">
-                        {inProgress.map((lesson, i) => (
-                          <LessonCard
-                            key={lesson.id}
-                            lesson={lesson}
-                            index={i}
-                            isAnchor={lesson.id === anchorId}
-                            onRefresh={() => fetchData(true)}
-                            siblingLessons={upcomingLessons}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {upcoming.length > 0 && (
-                    <div style={{ paddingTop: inProgress.length > 0 ? "24px" : 0 }}>
-                      <div
-                        className="flex items-center gap-3 mb-4"
-                        style={{ color: "var(--ink-tertiary)" }}
-                      >
-                        <span
-                          style={{
-                            fontSize: "11px",
-                            fontWeight: 600,
-                            letterSpacing: "0.08em",
-                            textTransform: "uppercase",
-                          }}
-                        >
-                          Up next · {upcoming.length}
-                        </span>
-                        <span
-                          className="flex-1"
-                          style={{ height: "1px", background: "var(--line-subtle)" }}
-                        />
-                      </div>
-                      <div className="space-y-3">
-                        {upcoming.map((lesson, i) => (
-                          <LessonCard
-                            key={lesson.id}
-                            lesson={lesson}
-                            index={inProgress.length + i}
-                            isAnchor={inProgress.length === 0 && lesson.id === anchorId}
-                            onRefresh={() => fetchData(true)}
-                            siblingLessons={upcomingLessons}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {finished.length > 0 && (
-                    <div style={{ paddingTop: "32px" }}>
-                      <button
-                        type="button"
-                        onClick={() => setShowFinished((v) => !v)}
-                        className="w-full flex items-center gap-3 mb-4 transition-colors"
-                        style={{ color: "var(--ink-tertiary)", opacity: 0.6 }}
-                      >
-                        <span
-                          style={{
-                            fontSize: "10px",
-                            fontWeight: 600,
-                            letterSpacing: "0.08em",
-                            textTransform: "uppercase",
-                          }}
-                        >
-                          Finished · {finished.length}
-                        </span>
-                        <span
-                          className="flex-1"
-                          style={{ height: "1px", background: "var(--line-subtle)" }}
-                        />
-                        <span style={{ fontSize: "10px" }}>
-                          {showFinished ? "Hide" : "Show"}
-                        </span>
-                      </button>
-                      <div className="finished-collapse" data-open={showFinished}>
-                        <div>
-                          <div className="space-y-3">
-                            {finished.map((lesson, i) => (
-                              <LessonCard
-                                key={lesson.id}
-                                lesson={lesson}
-                                index={inProgress.length + upcoming.length + i}
-                                onRefresh={() => fetchData(true)}
-                                siblingLessons={upcomingLessons}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </>
-              );
-            })()
+            <TodayNow lessons={todayLessons} />
           )}
 
         </TabsContent>
