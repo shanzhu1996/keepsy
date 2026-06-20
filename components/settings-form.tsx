@@ -53,11 +53,11 @@ export default function SettingsForm({ profile, authEmail }: SettingsFormProps) 
         : `every ${cycleLessons} lessons`;
 
   const inputStyle: React.CSSProperties = {
-    backgroundColor: "var(--bg-surface)",
+    backgroundColor: "#FFFDF8",
     border: "1px solid var(--line-strong)",
     color: "var(--ink-primary)",
     borderRadius: "10px",
-    padding: "10px 14px",
+    padding: "11px 14px",
     fontSize: "15px",
     width: "100%",
     outline: "none",
