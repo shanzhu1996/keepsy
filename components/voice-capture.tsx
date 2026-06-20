@@ -9,6 +9,7 @@ interface VoiceCaptureProps {
   onComplete: (transcript: string) => void;
   onStartOver?: () => void;
   onRecordingStart?: () => void;
+  onSwitchToType?: () => void;
 }
 
 interface SRResult {
@@ -19,12 +20,15 @@ interface SREvent extends Event {
   resultIndex: number;
   results: ArrayLike<SRResult>;
 }
+interface SRErrorEvent extends Event {
+  error: string;
+}
 interface SRInstance extends EventTarget {
   continuous: boolean;
   interimResults: boolean;
   lang: string;
   onresult: ((e: SREvent) => void) | null;
-  onerror: ((e: Event) => void) | null;
+  onerror: ((e: SRErrorEvent) => void) | null;
   onend: (() => void) | null;
   start: () => void;
   stop: () => void;
@@ -39,11 +43,13 @@ export default function VoiceCapture({
   onComplete,
   onStartOver,
   onRecordingStart,
+  onSwitchToType,
 }: VoiceCaptureProps) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [finalText, setFinalText] = useState("");
   const [interim, setInterim] = useState("");
   const [supported, setSupported] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const recRef = useRef<SRInstance | null>(null);
   const transcriptRef = useRef<HTMLDivElement>(null);
   const finalTextRef = useRef("");
@@ -88,7 +94,33 @@ export default function VoiceCapture({
       }
       if (interimChunk) setInterim(interimChunk);
     };
-    rec.onerror = () => {};
+    rec.onerror = (e) => {
+      // "no-speech" and "aborted" fire during natural pauses or our own stop() —
+      // let onend's auto-restart handle them silently.
+      if (e.error === "no-speech" || e.error === "aborted") return;
+
+      let msg: string;
+      switch (e.error) {
+        case "not-allowed":
+        case "service-not-allowed":
+          msg =
+            "Microphone access is blocked. Allow it in your browser settings, or switch to typing.";
+          break;
+        case "audio-capture":
+          msg = "No microphone found. Switch to typing instead.";
+          break;
+        case "network":
+          msg =
+            "Voice needs a connection. Check your network and try again, or switch to typing.";
+          break;
+        default:
+          msg = "Couldn't capture audio. Try again, or switch to typing.";
+      }
+      // Fatal error: stop the session so onend doesn't auto-restart into a loop.
+      stoppedRef.current = true;
+      setErrorMsg(msg);
+      setPhase("idle");
+    };
     rec.onend = () => {
       if (stoppedRef.current) return;
       // Auto-restart to keep continuous mode alive across iOS gaps.
@@ -113,6 +145,7 @@ export default function VoiceCapture({
 
   function handleStart() {
     if (!recRef.current) return;
+    setErrorMsg(null);
     stoppedRef.current = false;
     setPhase("recording");
     onRecordingStart?.();
@@ -161,10 +194,24 @@ export default function VoiceCapture({
 
   if (!supported) {
     return (
-      <div className="text-center p-6">
+      <div className="flex flex-col items-center text-center p-6 gap-3">
         <p className="text-sm" style={{ color: "var(--ink-secondary)" }}>
-          Voice capture isn&apos;t supported in this browser. Switch to Type mode.
+          Voice capture isn&apos;t supported in this browser.
         </p>
+        {onSwitchToType && (
+          <Button
+            size="lg"
+            className="h-11 px-6 text-[15px] font-semibold"
+            style={{
+              backgroundColor: "var(--accent)",
+              borderRadius: "var(--radius)",
+              boxShadow: "var(--shadow-cta)",
+            }}
+            onClick={onSwitchToType}
+          >
+            switch to typing
+          </Button>
+        )}
       </div>
     );
   }
@@ -289,6 +336,39 @@ export default function VoiceCapture({
                 start over
               </button>
             </div>
+          </>
+        ) : errorMsg ? (
+          /* ─── Error state ─── */
+          <>
+            <p
+              className="text-sm leading-relaxed text-center mb-1 px-2"
+              style={{ color: "var(--danger)" }}
+            >
+              {errorMsg}
+            </p>
+            <Button
+              size="lg"
+              className="w-full h-12 text-[15px] font-semibold"
+              style={{
+                backgroundColor: "var(--accent)",
+                borderRadius: "var(--radius)",
+                boxShadow: "var(--shadow-cta)",
+                letterSpacing: "-0.005em",
+              }}
+              onClick={handleStart}
+            >
+              try again
+            </Button>
+            {onSwitchToType && (
+              <button
+                type="button"
+                onClick={onSwitchToType}
+                className="text-xs mt-1"
+                style={{ color: "var(--accent-ink)" }}
+              >
+                switch to typing
+              </button>
+            )}
           </>
         ) : (
           <>

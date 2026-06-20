@@ -329,6 +329,7 @@ export default function LessonCapture({
                 lang={lang}
                 onComplete={(text) => generate(text)}
                 onRecordingStart={() => setHasStarted(true)}
+                onSwitchToType={() => setMode("type")}
               />
             ) : (
               <>
