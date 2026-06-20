@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import TodayNow from "@/components/today-now";
+import OnboardingEmpty from "@/components/onboarding-empty";
 import AddLessonDialog from "@/components/add-lesson-dialog";
 import type { Lesson, Student } from "@/lib/types";
 
@@ -188,28 +189,7 @@ export default function TodayPage() {
       <div className="keepsy-rise keepsy-rise-2">
         {todayLessons.length === 0 ? (
           students.length === 0 ? (
-            <div className="text-center py-16">
-              <p
-                className="font-display text-[20px] mb-2"
-                style={{
-                  color: "var(--ink-secondary)",
-                  letterSpacing: "-0.01em",
-                }}
-              >
-                add your first student to get started
-              </p>
-              <a
-                href="/students/new"
-                className="inline-block text-[14px] font-semibold px-5 py-2.5 rounded-[var(--radius)] mt-2"
-                style={{
-                  backgroundColor: "var(--accent)",
-                  color: "#fff",
-                  boxShadow: "var(--shadow-cta)",
-                }}
-              >
-                + add student
-              </a>
-            </div>
+            <OnboardingEmpty />
           ) : (
             <p
               className="text-center py-12 font-display"
