@@ -14,6 +14,7 @@ interface LessonResultProps {
   teacherName: string | null;
   initialNote: GeneratedNote;
   nextLessonLabel: string | null;
+  nextToRecord?: { id: string; name: string } | null;
   onReRecord: () => void;
 }
 
@@ -36,6 +37,7 @@ export default function LessonResult({
   teacherName,
   initialNote,
   nextLessonLabel,
+  nextToRecord,
   onReRecord,
 }: LessonResultProps) {
   const router = useRouter();
@@ -266,6 +268,135 @@ export default function LessonResult({
     : canSendEmail
       ? "email"
       : "copy / PDF";
+
+  if (sent) {
+    return (
+      <div className="fixed inset-0 bg-[var(--bg-canvas)] flex flex-col z-[60]">
+        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
+          <div
+            className="flex items-center justify-center"
+            style={{
+              width: "76px",
+              height: "76px",
+              borderRadius: "50%",
+              backgroundColor: "#E2F0E5",
+              color: "var(--success)",
+            }}
+          >
+            <svg
+              width="40"
+              height="40"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M20 6 9 17l-5-5" />
+            </svg>
+          </div>
+          <p
+            className="font-display"
+            style={{ fontSize: "25px", marginTop: "18px", color: "var(--ink-primary)" }}
+          >
+            Sent to {studentFirstName}
+          </p>
+          <p
+            style={{ fontSize: "14px", color: "var(--ink-secondary)", marginTop: "7px" }}
+          >
+            Saved to {studentFirstName}&apos;s history
+          </p>
+        </div>
+
+        <div className="px-6 pb-10 max-w-lg w-full mx-auto">
+          {nextToRecord ? (
+            <>
+              <p
+                className="text-[12px] font-semibold uppercase mb-2"
+                style={{ color: "var(--ink-tertiary)", letterSpacing: "0.07em" }}
+              >
+                still to record
+              </p>
+              <a
+                href={`/lessons/${nextToRecord.id}/capture`}
+                className="flex items-center gap-3"
+                style={{
+                  backgroundColor: "var(--bg-surface)",
+                  border: "1px solid var(--line-strong)",
+                  borderLeft: "3px solid var(--accent)",
+                  borderRadius: "14px",
+                  padding: "13px 15px",
+                  textDecoration: "none",
+                }}
+              >
+                <div
+                  style={{
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "50%",
+                    backgroundColor: "var(--accent-soft)",
+                    color: "var(--accent-ink)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: 500,
+                    fontSize: "15px",
+                  }}
+                >
+                  {(nextToRecord.name.trim()[0] ?? "?").toUpperCase()}
+                </div>
+                <div className="flex-1">
+                  <p className="font-display" style={{ fontSize: "18px", color: "var(--ink-primary)" }}>
+                    {nextToRecord.name}
+                  </p>
+                  <p style={{ fontSize: "12px", color: "var(--ink-secondary)" }}>
+                    next up
+                  </p>
+                </div>
+                <span
+                  style={{
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    color: "var(--accent-ink)",
+                    backgroundColor: "var(--accent-soft)",
+                    border: "1px solid rgba(165, 82, 42, 0.14)",
+                    borderRadius: "9px",
+                    padding: "8px 14px",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Record
+                </span>
+              </a>
+              <a
+                href="/today"
+                className="block text-center mt-4"
+                style={{ fontSize: "14px", color: "var(--ink-secondary)" }}
+              >
+                Back to today
+              </a>
+            </>
+          ) : (
+            <a
+              href="/today"
+              className="block w-full text-center h-12 leading-[3rem] rounded-xl font-semibold"
+              style={{
+                backgroundColor: "var(--bg-surface)",
+                color: "var(--ink-primary)",
+                border: "1px solid var(--line-strong)",
+                fontSize: "15px",
+                textDecoration: "none",
+              }}
+            >
+              All caught up — back to today
+            </a>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-[var(--bg-canvas)] flex flex-col z-[60] overflow-y-auto">
@@ -690,7 +821,7 @@ export default function LessonResult({
                         }),
                       })
                         .then(() => fetch(`/api/lessons/${lessonId}/mark-sent`, { method: "POST" }))
-                        .then(() => { setSent(true); setTimeout(() => setSent(false), 3000); })
+                        .then(() => { setSent(true); })
                         .catch(() => {});
                     }}
                     className="w-full flex items-center justify-between px-4 py-3 text-left"
@@ -735,7 +866,7 @@ export default function LessonResult({
                         }),
                       })
                         .then(() => fetch(`/api/lessons/${lessonId}/mark-sent`, { method: "POST" }))
-                        .then(() => { setSent(true); setTimeout(() => setSent(false), 3000); })
+                        .then(() => { setSent(true); })
                         .catch(() => {});
                     }}
                     className="w-full flex items-center justify-between px-4 py-3 text-left"

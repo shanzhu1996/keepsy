@@ -128,6 +128,36 @@ export default async function LessonCapturePage({
     }
   }
 
+  // Next lesson still needing a note, earlier the same day — powers the
+  // post-send hand-off ("record Maya next"). Scoped to this lesson's calendar
+  // day and to lessons that have already happened, ordered earliest-first to
+  // match the home's "needs notes" worklist.
+  let nextToRecord: { id: string; name: string } | null = null;
+  {
+    const dayStart = new Date(lessonDate);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(lessonDate);
+    dayEnd.setHours(23, 59, 59, 999);
+    const nowIso = new Date().toISOString();
+    const upper =
+      dayEnd.toISOString() < nowIso ? dayEnd.toISOString() : nowIso;
+    const { data: nextRec } = await supabase
+      .from("lessons")
+      .select("id, student:students(name)")
+      .eq("user_id", user.id)
+      .neq("id", id)
+      .neq("status", "cancelled")
+      .gte("scheduled_at", dayStart.toISOString())
+      .lte("scheduled_at", upper)
+      .or("note_status.is.null,note_status.neq.sent")
+      .order("scheduled_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (nextRec) {
+      const s = nextRec.student as unknown as { name?: string } | null;
+      nextToRecord = { id: nextRec.id as string, name: s?.name ?? "Student" };
+    }
+  }
 
   return (
     <LessonCapture
@@ -143,6 +173,7 @@ export default async function LessonCapturePage({
       initialMode={modeParam === "type" ? "type" : "voice"}
       nextLessonLabel={nextLessonLabel}
       prevLessonSnippet={prevLessonSnippet}
+      nextToRecord={nextToRecord}
     />
   );
 }
