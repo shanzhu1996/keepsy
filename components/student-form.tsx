@@ -491,27 +491,23 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
           <button
             type="button"
             onClick={() => setShowBilling(true)}
-            className="w-full flex items-center mb-2 py-1"
+            className="flex items-center gap-1.5 mb-3 py-1"
           >
             <span
-              className="text-xs font-medium"
-              style={{
-                color: "var(--ink-tertiary)",
-                letterSpacing: "0.04em",
-                textTransform: "uppercase",
-              }}
+              className="text-[14px] font-medium"
+              style={{ color: "var(--accent-ink)" }}
             >
-              set up billing
+              + Set up billing
             </span>
             <span
-              className="text-xs ml-1.5"
-              style={{ color: "var(--ink-tertiary)", fontWeight: 400 }}
+              className="text-[13px]"
+              style={{ color: "var(--ink-tertiary)" }}
             >
               · optional
             </span>
             <span
-              className="ml-auto"
-              style={{ color: "var(--ink-tertiary)", fontSize: "13px" }}
+              className="text-[12px]"
+              style={{ color: "var(--ink-tertiary)" }}
             >
               ▾
             </span>
