@@ -1,9 +1,16 @@
 import OpenAI from "openai";
 import type { GeneratedNote } from "@/lib/types";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Lazily instantiated so importing this module (e.g. during `next build`'s
+// page-data collection) doesn't require OPENAI_API_KEY — it's only needed when
+// a request actually generates a note at runtime.
+let _openai: OpenAI | null = null;
+function getOpenAI(): OpenAI {
+  if (!_openai) {
+    _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+  return _openai;
+}
 
 export async function generateFromTranscript(
   transcript: string,
@@ -11,7 +18,7 @@ export async function generateFromTranscript(
   language: string = "English"
 ): Promise<GeneratedNote> {
   const firstName = studentName.split(" ")[0] || studentName;
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAI().chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
       {
@@ -80,7 +87,7 @@ export async function generateLessonSummaries(
   rawNote: string,
   studentName: string
 ): Promise<{ studentSummary: string }> {
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAI().chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
       {
@@ -111,7 +118,7 @@ export async function structureLessonNotes(
   brainDump: string,
   studentName: string
 ): Promise<{ covered: string[]; teacherNotes: string; assignments: string[] }> {
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAI().chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
       {
@@ -169,7 +176,7 @@ export async function generatePaymentReminder(
     ? `The student's current package of ${lessonCount} lessons has started but hasn't been paid for yet. This is a gentle follow-up.${dateContext}`
     : `The student's next package of ${lessonCount} lessons is coming up and payment is due before it starts.${dateContext}`;
 
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAI().chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
       {
@@ -208,7 +215,7 @@ export async function generateLessonReminder(
     day: "numeric",
   });
 
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAI().chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
       {
@@ -243,7 +250,7 @@ export async function generateRescheduleMessage(
     day: "numeric",
   });
 
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAI().chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
       {
@@ -277,7 +284,7 @@ export async function generateProgressSummary(
     })
     .join("\n\n");
 
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAI().chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
       {

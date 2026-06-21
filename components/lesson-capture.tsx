@@ -21,6 +21,7 @@ interface LessonCaptureProps {
   initialMode?: "voice" | "type";
   nextLessonLabel?: string | null;
   prevLessonSnippet?: string | null;
+  nextToRecord?: { id: string; name: string } | null;
 }
 
 type Phase = "capture" | "processing" | "result";
@@ -52,6 +53,7 @@ export default function LessonCapture({
   initialMode = "voice",
   nextLessonLabel,
   prevLessonSnippet,
+  nextToRecord,
 }: LessonCaptureProps) {
   const router = useRouter();
   const firstName = studentName.split(" ")[0] || studentName;
@@ -119,6 +121,7 @@ export default function LessonCapture({
         teacherName={teacherName}
         initialNote={note}
         nextLessonLabel={nextLessonLabel ?? null}
+        nextToRecord={nextToRecord ?? null}
         onReRecord={() => {
           setNote(null);
           setPhase("capture");
@@ -329,6 +332,7 @@ export default function LessonCapture({
                 lang={lang}
                 onComplete={(text) => generate(text)}
                 onRecordingStart={() => setHasStarted(true)}
+                onSwitchToType={() => setMode("type")}
               />
             ) : (
               <>

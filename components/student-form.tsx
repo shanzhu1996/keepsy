@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Student } from "@/lib/types";
@@ -52,6 +52,13 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
   const [smsConsent, setSmsConsent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  // Billing is collapsed by default for a new student (lighter first add); the
+  // cycle/price defaults still submit even when it's never opened.
+  const [showBilling, setShowBilling] = useState(isEditing);
+  // Set after a "save & add another" so the teacher gets a confirmation while
+  // the form resets for the next roster entry.
+  const [lastAdded, setLastAdded] = useState<string | null>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
 
   // If this student already has SMS consent on file, we don't re-prompt.
   const consentOnFile = !!student?.sms_consent_given_at;
@@ -66,9 +73,7 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
   const emailError = emailTouched && email && !validateEmail(email);
   const phoneError = phoneTouched && phone && !validatePhone(phone);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-
+  async function save(addAnother: boolean) {
     // Final validation check
     if (email && !validateEmail(email)) {
       setError("please enter a valid email address");
@@ -129,29 +134,58 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
           .eq("id", student.id);
         if (error) throw error;
         router.push(`/students/${student.id}`);
-      } else {
-        const { data, error } = await supabase
-          .from("students")
-          .insert({ ...payload, user_id: user.id })
-          .select()
-          .single();
-        if (error) throw error;
-        router.push(`/students/${data.id}`);
+        router.refresh();
+        return;
       }
+
+      const { data, error } = await supabase
+        .from("students")
+        .insert({ ...payload, user_id: user.id })
+        .select()
+        .single();
+      if (error) throw error;
+
+      if (addAnother) {
+        // Keep the package defaults, clear the per-person fields, stay put so
+        // a whole roster can be entered without leaving the form.
+        const justAdded = name;
+        setName("");
+        setEmail("");
+        setPhone("");
+        setNotes("");
+        setSmsConsent(false);
+        setEmailTouched(false);
+        setPhoneTouched(false);
+        setLessonsRemaining("");
+        setShowMidCycle(false);
+        setLastAdded(justAdded);
+        setLoading(false);
+        nameRef.current?.focus();
+        router.refresh();
+        return;
+      }
+
+      // A new student's first lesson is almost always the next thing — drop
+      // them on the home with the add-lesson dialog open for this student.
+      router.push(`/today?addLesson=${data.id}`);
       router.refresh();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
       setLoading(false);
     }
   }
 
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    save(false);
+  }
+
   const inputStyle: React.CSSProperties = {
-    backgroundColor: "var(--bg-surface)",
+    backgroundColor: "#FFFDF8",
     border: "1px solid var(--line-strong)",
     color: "var(--ink-primary)",
     borderRadius: "10px",
-    padding: "10px 14px",
+    padding: "11px 14px",
     fontSize: "15px",
     width: "100%",
     outline: "none",
@@ -183,6 +217,7 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
             name <span style={{ color: "var(--ink-tertiary)" }}>*</span>
           </label>
           <input
+            ref={nameRef}
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
@@ -199,7 +234,10 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
             className="text-sm font-medium mb-1.5 block"
             style={{ color: "var(--ink-secondary)" }}
           >
-            email
+            email{" "}
+            <span style={{ color: "var(--ink-tertiary)", fontWeight: 400 }}>
+              · optional
+            </span>
           </label>
           <input
             type="email"
@@ -431,7 +469,10 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
             className="text-sm font-medium mb-1.5 block"
             style={{ color: "var(--ink-secondary)" }}
           >
-            notes
+            notes{" "}
+            <span style={{ color: "var(--ink-tertiary)", fontWeight: 400 }}>
+              · optional
+            </span>
           </label>
           <input
             value={notes}
@@ -446,6 +487,37 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
         {/* Divider */}
         <div style={{ height: "1px", backgroundColor: "var(--line-strong)", margin: "0 0 16px" }} />
 
+        {!showBilling ? (
+          <button
+            type="button"
+            onClick={() => setShowBilling(true)}
+            className="w-full flex items-center mb-2 py-1"
+          >
+            <span
+              className="text-xs font-medium"
+              style={{
+                color: "var(--ink-tertiary)",
+                letterSpacing: "0.04em",
+                textTransform: "uppercase",
+              }}
+            >
+              set up billing
+            </span>
+            <span
+              className="text-xs ml-1.5"
+              style={{ color: "var(--ink-tertiary)", fontWeight: 400 }}
+            >
+              · optional
+            </span>
+            <span
+              className="ml-auto"
+              style={{ color: "var(--ink-tertiary)", fontSize: "13px" }}
+            >
+              ▾
+            </span>
+          </button>
+        ) : (
+          <>
         {/* Billing */}
         <p
           className="text-xs font-medium mb-3"
@@ -647,6 +719,8 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
             </div>
           );
         })()}
+          </>
+        )}
 
         {error && (
           <p className="text-sm mb-3" style={{ color: "var(--danger)" }}>
@@ -664,25 +738,73 @@ export default function StudentForm({ student, defaults }: StudentFormProps) {
           boxShadow: "0 -6px 12px -8px rgba(43,31,23,0.10)",
         }}
       >
-        <div className="flex gap-3">
-          <button
-            type="submit"
-            form="student-form"
-            disabled={loading || !name.trim() || (needsConsent && !smsConsent)}
-            className="flex-1 py-2.5 rounded-xl text-base font-medium transition-colors disabled:opacity-50"
-            style={{ backgroundColor: "var(--accent)", color: "#fff" }}
-          >
-            {loading ? "saving…" : isEditing ? "save changes" : "add student"}
-          </button>
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="text-sm font-medium px-4 transition-colors"
-            style={{ color: "var(--ink-secondary)" }}
-          >
-            cancel
-          </button>
-        </div>
+        {(() => {
+          const disabled =
+            loading || !name.trim() || (needsConsent && !smsConsent);
+          return (
+            <>
+              {lastAdded && !name.trim() && (
+                <p
+                  className="text-[13px] mb-2.5 flex items-center gap-1.5"
+                  style={{ color: "var(--success)" }}
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
+                  {lastAdded} added — add the next
+                </p>
+              )}
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  form="student-form"
+                  disabled={disabled}
+                  className="flex-1 h-12 rounded-xl text-[15px] font-medium transition-colors"
+                  style={{
+                    backgroundColor: disabled ? "var(--bg-muted)" : "var(--accent)",
+                    color: disabled ? "var(--ink-tertiary)" : "#fff",
+                    boxShadow: disabled ? "none" : "var(--shadow-cta)",
+                  }}
+                >
+                  {loading
+                    ? "saving…"
+                    : isEditing
+                      ? "save changes"
+                      : "add student"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.back()}
+                  className="text-sm font-medium px-4 transition-colors"
+                  style={{ color: "var(--ink-secondary)" }}
+                >
+                  cancel
+                </button>
+              </div>
+              {!isEditing && (
+                <button
+                  type="button"
+                  onClick={() => save(true)}
+                  disabled={disabled}
+                  className="w-full text-center mt-3 text-[13px] font-medium disabled:opacity-40"
+                  style={{ color: "var(--accent-ink)" }}
+                >
+                  Save &amp; add another
+                </button>
+              )}
+            </>
+          );
+        })()}
       </div>
     </div>
   );

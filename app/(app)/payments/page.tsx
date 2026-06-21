@@ -57,7 +57,7 @@ export default async function PaymentsPage() {
             lineHeight: "34px",
           }}
         >
-          Payments
+          Income
         </h1>
       </div>
 

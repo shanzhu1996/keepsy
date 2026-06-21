@@ -27,33 +27,46 @@ export default function IncomeSummary({ months }: IncomeSummaryProps) {
   const relevantPast = past.slice(0, lastIncomeIdx + 1);
   const hasPast = relevantPast.length > 0;
 
+  const fmt = (n: number) =>
+    n.toLocaleString(undefined, {
+      minimumFractionDigits: n % 1 === 0 ? 0 : 2,
+      maximumFractionDigits: 2,
+    });
+
   return (
     <div className="mb-4">
-      {/* Current month — always visible */}
       <div
-        className="rounded-[var(--radius-card)] px-4 py-3"
+        className="rounded-[14px] px-5 py-4"
         style={{
           backgroundColor: "var(--bg-surface)",
-          border: "1px solid var(--line-subtle)",
+          border: "1px solid var(--line-strong)",
         }}
       >
-        <div className="flex justify-between items-center">
-          <span
-            className="text-[13px] font-medium"
-            style={{ color: "var(--ink-primary)" }}
-          >
-            {current.label}
-          </span>
-          <span
-            className="font-display-numerals text-[18px]"
-            style={{
-              color: "var(--ink-primary)",
-              letterSpacing: "-0.01em",
-            }}
-          >
-            ${current.total.toFixed(2)}
-          </span>
-        </div>
+        {/* Current month — the satisfying number, front and center */}
+        <p
+          style={{
+            fontFamily: "var(--font-instrument), sans-serif",
+            fontSize: "12px",
+            fontWeight: 600,
+            letterSpacing: "0.07em",
+            textTransform: "uppercase",
+            color: "var(--ink-tertiary)",
+          }}
+        >
+          {current.label}
+        </p>
+        <p
+          className="font-display-numerals"
+          style={{
+            fontSize: "36px",
+            lineHeight: 1.1,
+            color: "var(--ink-primary)",
+            letterSpacing: "-0.02em",
+            marginTop: "4px",
+          }}
+        >
+          ${fmt(current.total)}
+        </p>
 
         {/* Previous months toggle */}
         {hasPast && (
@@ -61,8 +74,8 @@ export default function IncomeSummary({ months }: IncomeSummaryProps) {
             <button
               type="button"
               onClick={() => setExpanded((v) => !v)}
-              className="mt-2 text-[12px]"
-              style={{ color: "var(--ink-tertiary)" }}
+              className="mt-3 text-[12px]"
+              style={{ color: "var(--accent-ink)" }}
             >
               {expanded ? "hide previous months" : "previous months"}
             </button>
@@ -84,7 +97,7 @@ export default function IncomeSummary({ months }: IncomeSummaryProps) {
                       {m.label}
                     </span>
                     <span
-                      className="font-display-numerals text-[13px]"
+                      className="font-display-numerals text-[14px]"
                       style={{
                         color:
                           m.total > 0
@@ -92,7 +105,7 @@ export default function IncomeSummary({ months }: IncomeSummaryProps) {
                             : "var(--ink-tertiary)",
                       }}
                     >
-                      ${m.total.toFixed(2)}
+                      ${fmt(m.total)}
                     </span>
                   </div>
                 ))}
