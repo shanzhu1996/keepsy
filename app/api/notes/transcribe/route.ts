@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { createClient } from "@/lib/supabase/server";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
 // Whisper fallback for browsers without webkitSpeechRecognition (e.g. desktop Firefox).
 // Accepts multipart/form-data with a single "audio" file blob.
 export async function POST(request: Request) {
@@ -22,6 +20,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing audio file" }, { status: 400 });
     }
 
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const result = await openai.audio.transcriptions.create({
       file,
       model: "whisper-1",
