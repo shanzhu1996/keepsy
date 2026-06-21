@@ -168,6 +168,7 @@ export default async function LessonCapturePage({
       contactMethod={student?.contact_method ?? "phone"}
       timeLabel={time}
       dateLabel={dateLabel}
+      scheduledAt={lesson.scheduled_at}
       teacherName={teacherName}
       initialNote={initialNote}
       initialMode={modeParam === "type" ? "type" : "voice"}

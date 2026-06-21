@@ -16,6 +16,9 @@ interface LessonCaptureProps {
   contactMethod: string;
   timeLabel: string;
   dateLabel: string;
+  /** Raw ISO of the lesson — reformatted client-side so the time shows in the
+   *  teacher's local timezone (server renders in UTC on Vercel otherwise). */
+  scheduledAt: string;
   teacherName: string | null;
   initialNote: GeneratedNote | null;
   initialMode?: "voice" | "type";
@@ -48,6 +51,7 @@ export default function LessonCapture({
   contactMethod,
   timeLabel,
   dateLabel,
+  scheduledAt,
   teacherName,
   initialNote,
   initialMode = "voice",
@@ -66,6 +70,26 @@ export default function LessonCapture({
   const [lang, setLang] = useState<string>("en-US");
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
+
+  // Reformat the lesson time in the browser's local timezone — server-rendered
+  // strings come out as UTC on Vercel. Initialised to the server value so the
+  // first client render matches SSR (no hydration mismatch), then corrected.
+  const [timeLabelLocal, setTimeLabelLocal] = useState(timeLabel);
+  const [dateLabelLocal, setDateLabelLocal] = useState(dateLabel);
+  useEffect(() => {
+    if (!scheduledAt) return;
+    const d = new Date(scheduledAt);
+    setTimeLabelLocal(
+      d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+    );
+    setDateLabelLocal(
+      d.toLocaleDateString([], {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      })
+    );
+  }, [scheduledAt]);
 
   useEffect(() => {
     try {
@@ -117,7 +141,7 @@ export default function LessonCapture({
         studentPhone={studentPhone}
         studentEmail={studentEmail}
         contactMethod={contactMethod}
-        dateLabel={dateLabel}
+        dateLabel={dateLabelLocal}
         teacherName={teacherName}
         initialNote={note}
         nextLessonLabel={nextLessonLabel ?? null}
@@ -151,7 +175,7 @@ export default function LessonCapture({
           className="text-[14px] font-semibold"
           style={{ color: "var(--ink-primary)", letterSpacing: "-0.005em" }}
         >
-          {firstName} · {timeLabel}
+          {firstName} · {timeLabelLocal}
         </div>
         <div className="flex items-center gap-2">
           <div className="relative">
