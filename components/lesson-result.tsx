@@ -50,6 +50,18 @@ export default function LessonResult({
   const [showDetails, setShowDetails] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // The outgoing message the teacher actually sends. null = "follow the
+  // auto-composed summary"; once they type, it forks to their own wording.
+  const [messageDraft, setMessageDraft] = useState<string | null>(null);
+  const msgRef = useRef<HTMLTextAreaElement>(null);
+  function autoResizeMsg() {
+    const ta = msgRef.current;
+    if (ta) {
+      ta.style.height = "auto";
+      ta.style.height = ta.scrollHeight + "px";
+    }
+  }
+
   // Teacher's notes — free-form text (private observations)
   const [teacherNotes, setTeacherNotes] = useState(
     note.lesson_report.teacher_notes.join("\n")
@@ -68,6 +80,12 @@ export default function LessonResult({
     autoResize();
   }, [teacherNotes]);
 
+  // Keep the send-message box sized to its content, whether the teacher is
+  // editing their own copy or the auto-composed summary is changing.
+  useEffect(() => {
+    autoResizeMsg();
+  }, [messageDraft, note]);
+
   function scheduleSave(next: GeneratedNote, teacherNotesText?: string) {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
@@ -85,7 +103,7 @@ export default function LessonResult({
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          student_message: next.student_message,
+          student_message: messageDraft ?? composeMessage(next.lesson_report),
           lesson_report: reportToSave,
         }),
       }).catch(() => {});
@@ -103,6 +121,34 @@ export default function LessonResult({
     scheduleSave(note, text);
   }
 
+  // Teacher edited the outgoing message directly — fork to their wording and
+  // persist exactly what they typed (debounced).
+  function updateMessage(text: string) {
+    setMessageDraft(text);
+    autoResizeMsg();
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    const teacherNotesArr = teacherNotes
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    saveTimer.current = setTimeout(() => {
+      fetch(`/api/lessons/${lessonId}/note`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          student_message: text,
+          lesson_report: { ...note.lesson_report, teacher_notes: teacherNotesArr },
+        }),
+      }).catch(() => {});
+    }, 600);
+  }
+
+  // Discard the teacher's manual edit and snap back to the auto-composed summary.
+  function rebuildMessageFromDetails() {
+    setMessageDraft(null);
+    scheduleSave(note);
+  }
+
   async function handleSaveAndClose() {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     setSaving(true);
@@ -115,7 +161,7 @@ export default function LessonResult({
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          student_message: note.student_message,
+          student_message: outgoingMessage(),
           lesson_report: { ...note.lesson_report, teacher_notes: teacherNotesArr },
         }),
       });
@@ -162,7 +208,8 @@ export default function LessonResult({
     scheduleSave(next);
   }
 
-  function buildReportMessage(): string {
+  // Auto-compose a summary message from the structured bullets.
+  function composeMessage(report: LessonReport): string {
     const parts: string[] = [];
 
     // Greeting
@@ -171,28 +218,28 @@ export default function LessonResult({
     parts.push("Great work today! Here's a summary of our lesson:");
     parts.push("");
 
-    const covered = note.lesson_report.covered.filter(Boolean);
+    const covered = report.covered.filter(Boolean);
     if (covered.length) {
       parts.push("What we covered:");
       covered.forEach((c) => parts.push(`  • ${c}`));
       parts.push("");
     }
 
-    const assignments = note.lesson_report.assignments.filter(Boolean);
+    const assignments = report.assignments.filter(Boolean);
     if (assignments.length) {
       parts.push("Assignments:");
       assignments.forEach((a) => parts.push(`  • ${a}`));
       parts.push("");
     }
 
-    const nextPlan = note.lesson_report.next_lesson_plan.filter(Boolean);
+    const nextPlan = report.next_lesson_plan.filter(Boolean);
     if (nextPlan.length) {
       parts.push("Next class:");
       nextPlan.forEach((n) => parts.push(`  • ${n}`));
       parts.push("");
     }
 
-    const materials = note.lesson_report.materials.filter(Boolean);
+    const materials = report.materials.filter(Boolean);
     if (materials.length) {
       parts.push("Materials:");
       materials.forEach((m) => parts.push(`  • ${m}`));
@@ -212,8 +259,14 @@ export default function LessonResult({
     return parts.join("\n").trim();
   }
 
+  // What the teacher is about to send: their own edit if they made one,
+  // otherwise the live auto-composed summary.
+  function outgoingMessage(): string {
+    return messageDraft ?? composeMessage(note.lesson_report);
+  }
+
   async function handleCopyReport() {
-    const text = buildReportMessage();
+    const text = outgoingMessage();
     try {
       if (typeof navigator !== "undefined" && "vibrate" in navigator) {
         navigator.vibrate?.(10);
@@ -246,7 +299,7 @@ export default function LessonResult({
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        student_message: buildReportMessage(),
+        student_message: outgoingMessage(),
         lesson_report: {
           ...note.lesson_report,
           teacher_notes: teacherNotesArr,
@@ -260,6 +313,9 @@ export default function LessonResult({
   }
 
   const hasCovered = note.lesson_report.covered.filter(Boolean).length > 0;
+  // Sendable when there's structured content OR the teacher wrote their own message.
+  const canSend =
+    hasCovered || (messageDraft !== null && messageDraft.trim().length > 0);
 
   const canSendSMS = !!studentPhone;
   const canSendEmail = !!studentEmail;
@@ -441,7 +497,7 @@ export default function LessonResult({
 
       {/* Body */}
       <div className="flex-1 px-5 pt-5 pb-48 max-w-lg w-full mx-auto">
-        {/* ─── Message to send (hero) ─── */}
+        {/* ─── Message to send (hero, editable) ─── */}
         <div className="flex items-center justify-between mb-2">
           <h2
             className="text-[12px] font-semibold uppercase"
@@ -449,6 +505,20 @@ export default function LessonResult({
           >
             ready to send
           </h2>
+          {messageDraft !== null ? (
+            <button
+              type="button"
+              onClick={rebuildMessageFromDetails}
+              className="text-[12px]"
+              style={{ color: "var(--ink-tertiary)" }}
+            >
+              ↻ rebuild from details
+            </button>
+          ) : (
+            <span className="text-[12px]" style={{ color: "var(--ink-tertiary)" }}>
+              tap to edit
+            </span>
+          )}
         </div>
         <div
           style={{
@@ -457,12 +527,14 @@ export default function LessonResult({
             padding: "15px 16px",
           }}
         >
-          <p
-            className="text-[14px] whitespace-pre-wrap"
-            style={{ color: "var(--ink-primary)", lineHeight: 1.6 }}
-          >
-            {buildReportMessage()}
-          </p>
+          <textarea
+            ref={msgRef}
+            value={outgoingMessage()}
+            onChange={(e) => updateMessage(e.target.value)}
+            className="keepsy-editable-field w-full bg-transparent outline-none resize-none text-[14px] whitespace-pre-wrap"
+            style={{ color: "var(--ink-primary)", lineHeight: 1.6, minHeight: "48px" }}
+            aria-label="Message to send"
+          />
           <p
             className="text-[12px] mt-3 pt-3"
             style={{
@@ -732,13 +804,13 @@ export default function LessonResult({
               <button
                 type="button"
                 onClick={() => setSendOpen(true)}
-                disabled={!hasCovered}
+                disabled={!canSend}
                 className="w-full h-12 text-[15px] font-semibold rounded-xl"
                 style={{
-                  backgroundColor: hasCovered ? "var(--accent)" : "var(--bg-muted)",
-                  color: hasCovered ? "#fff" : "var(--ink-tertiary)",
-                  boxShadow: hasCovered ? "var(--shadow-cta)" : "none",
-                  cursor: hasCovered ? "pointer" : "default",
+                  backgroundColor: canSend ? "var(--accent)" : "var(--bg-muted)",
+                  color: canSend ? "#fff" : "var(--ink-tertiary)",
+                  boxShadow: canSend ? "var(--shadow-cta)" : "none",
+                  cursor: canSend ? "pointer" : "default",
                 }}
               >
                 Send to {studentFirstName}
@@ -748,7 +820,7 @@ export default function LessonResult({
                   className="text-[12px]"
                   style={{ color: "var(--ink-tertiary)" }}
                 >
-                  {hasCovered ? `via ${channelLabel}` : "add what you covered to send"}
+                  {canSend ? `via ${channelLabel}` : "add a message or what you covered to send"}
                 </span>
                 <span
                   className="text-[12px]"
@@ -804,7 +876,7 @@ export default function LessonResult({
                 {/* SMS option — opens native messages app */}
                 {canSendSMS && (
                   <a
-                    href={`sms:${studentPhone}${/iP(hone|ad|od)/.test(typeof navigator !== "undefined" ? navigator.userAgent : "") ? "&" : "?"}body=${encodeURIComponent(buildReportMessage())}`}
+                    href={`sms:${studentPhone}${/iP(hone|ad|od)/.test(typeof navigator !== "undefined" ? navigator.userAgent : "") ? "&" : "?"}body=${encodeURIComponent(outgoingMessage())}`}
                     onClick={() => {
                       setSendOpen(false);
                       // Mark as sent in background
@@ -816,7 +888,7 @@ export default function LessonResult({
                         method: "PATCH",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                          student_message: buildReportMessage(),
+                          student_message: outgoingMessage(),
                           lesson_report: { ...note.lesson_report, teacher_notes: teacherNotesArr },
                         }),
                       })
@@ -849,7 +921,7 @@ export default function LessonResult({
                 {/* Email option — opens mailto: with pre-filled content */}
                 {canSendEmail && (
                   <a
-                    href={`mailto:${studentEmail}?subject=${encodeURIComponent(`Lesson Summary – ${studentFirstName} · ${dateLabel}`)}&body=${encodeURIComponent(buildReportMessage())}`}
+                    href={`mailto:${studentEmail}?subject=${encodeURIComponent(`Lesson Summary – ${studentFirstName} · ${dateLabel}`)}&body=${encodeURIComponent(outgoingMessage())}`}
                     onClick={() => {
                       setSendOpen(false);
                       // Mark as sent in background
@@ -861,7 +933,7 @@ export default function LessonResult({
                         method: "PATCH",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                          student_message: buildReportMessage(),
+                          student_message: outgoingMessage(),
                           lesson_report: { ...note.lesson_report, teacher_notes: teacherNotesArr },
                         }),
                       })
