@@ -74,8 +74,25 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ note });
   } catch (err) {
+    // Surface the underlying cause so a failed OpenAI fetch is diagnosable from
+    // both the server logs and the client UI (e.g. APIConnectionError · ETIMEDOUT).
+    const e = err as {
+      name?: string;
+      status?: number;
+      message?: string;
+      cause?: { code?: string; message?: string };
+    };
+    const causeCode = e?.cause?.code ?? e?.cause?.message;
+    const detail = [e?.name, e?.status, causeCode].filter(Boolean).join(" · ");
+    console.error("[generate-from-text] failed:", {
+      name: e?.name,
+      status: e?.status,
+      message: e?.message,
+      cause: e?.cause,
+    });
+    const base = e?.message ?? "Server error";
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Server error" },
+      { error: detail ? `${base} [${detail}]` : base },
       { status: 500 }
     );
   }
