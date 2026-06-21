@@ -1,247 +1,210 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PublicShell } from "@/components/public-shell";
-import { TodayMockup, NoteMockup } from "@/components/landing-mockups";
+import LandingTryDemo from "@/components/landing-try-demo";
 
 export default async function Home() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  const loggedIn = !!user;
-
-  const subjects = [
-    "Piano",
-    "Violin",
-    "Voice",
-    "Guitar",
-    "Languages",
-    "Math & academic",
-    "Dance",
-    "Yoga",
-    "Art",
-    "Coaching",
-  ];
+  // Logged-in users get their dashboard, not the marketing page.
+  if (user) redirect("/today");
 
   return (
-    <PublicShell loggedIn={loggedIn}>
-      {/* Hero */}
-      <section className="flex items-center justify-center px-6 py-20 sm:py-24">
-        <div className="max-w-2xl text-center">
+    <PublicShell loggedIn={false}>
+      {/* ─── Hero ─── */}
+      <section className="px-6 pt-16 pb-6 sm:pt-20">
+        <div className="max-w-2xl mx-auto text-center">
           <p
-            className="font-label keepsy-rise keepsy-rise-1 mb-6"
+            className="font-label keepsy-rise keepsy-rise-1 mb-5"
             style={{ color: "var(--accent)" }}
           >
             for private lesson teachers
           </p>
           <h1
-            className="font-display text-[44px] sm:text-[60px] leading-[1.02] mb-6 keepsy-rise keepsy-rise-2"
+            className="font-display text-[38px] sm:text-[54px] leading-[1.04] mb-5 keepsy-rise keepsy-rise-2"
             style={{ color: "var(--ink-primary)", letterSpacing: "-0.02em" }}
           >
-            Teach more.<br />
-            Type less.
+            Keep your teaching<br />easy-peasy.
           </h1>
           <p
-            className="text-[17px] leading-relaxed mb-10 keepsy-rise keepsy-rise-3 max-w-xl mx-auto"
+            className="text-[16px] sm:text-[17px] leading-relaxed mb-4 keepsy-rise keepsy-rise-3 max-w-xl mx-auto"
             style={{ color: "var(--ink-secondary)" }}
           >
-            Keep your teaching easy peasy. Schedules, lesson notes, auto
-            reminders, billing cycles, and monthly income &mdash; all in one
-            place.
+            Talk for ninety seconds after class &mdash; and the note writes itself, ready to send.
           </p>
-          <div className="flex items-center justify-center gap-3 keepsy-rise keepsy-rise-4">
-            {loggedIn ? (
-              <Link href="/today" className="btn-primary h-12 px-6 text-[15px]">
-                go to your dashboard &rarr;
-              </Link>
-            ) : (
-              <>
-                <Link href="/login" className="btn-primary h-12 px-6 text-[15px]">
-                  create an account
-                </Link>
-                <Link href="/login" className="btn-secondary h-12 px-6 text-[15px]">
-                  log in
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* Featured section — Schedule + Lesson notes with mockups */}
-      <section
-        className="px-6 py-20"
-        style={{ backgroundColor: "var(--bg-surface)" }}
-      >
-        <div className="max-w-5xl mx-auto">
           <p
-            className="font-label text-center mb-4"
+            className="text-[12.5px] keepsy-rise keepsy-rise-3 flex items-center justify-center gap-1.5"
             style={{ color: "var(--ink-tertiary)" }}
           >
-            what keepsy does
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z" />
+            </svg>
+            built by a teacher, for teachers
           </p>
-          <h2
-            className="font-display text-[32px] sm:text-[40px] text-center mb-20 leading-[1.1]"
-            style={{ color: "var(--ink-primary)", letterSpacing: "-0.02em" }}
-          >
-            Five quiet tools,<br />one calm studio.
-          </h2>
-
-          {/* Feature 01 — Schedule + TodayMockup */}
-          <div className="grid md:grid-cols-2 gap-10 md:gap-16 items-center mb-24">
-            <div>
-              <p className="font-label mb-3" style={{ color: "var(--accent)" }}>
-                01 &middot; schedule
-              </p>
-              <h3
-                className="text-[26px] sm:text-[30px] font-medium mb-4 leading-[1.15]"
-                style={{ color: "var(--ink-primary)", letterSpacing: "-0.01em" }}
-              >
-                Know what&apos;s next.<br />Always.
-              </h3>
-              <p className="text-[16px] leading-relaxed" style={{ color: "var(--ink-secondary)" }}>
-                One glance shows what&apos;s happening now, what&apos;s up
-                next, and what&apos;s done. No refreshing calendars between
-                students.
-              </p>
-            </div>
-            <div>
-              <TodayMockup />
-            </div>
-          </div>
-
-          {/* Feature 02 — Lesson notes + NoteMockup */}
-          <div className="grid md:grid-cols-2 gap-10 md:gap-16 items-center">
-            <div className="order-2 md:order-1">
-              <NoteMockup />
-            </div>
-            <div className="order-1 md:order-2">
-              <p className="font-label mb-3" style={{ color: "var(--accent)" }}>
-                02 &middot; lesson notes
-              </p>
-              <h3
-                className="text-[26px] sm:text-[30px] font-medium mb-4 leading-[1.15]"
-                style={{ color: "var(--ink-primary)", letterSpacing: "-0.01em" }}
-              >
-                Ninety seconds,<br />not thirty minutes.
-              </h3>
-              <p className="text-[16px] leading-relaxed" style={{ color: "var(--ink-secondary)" }}>
-                Talk or type a few lines after class. Keepsy writes the
-                parent-ready report &mdash; in 8 languages. You hit send.
-              </p>
-            </div>
-          </div>
         </div>
       </section>
 
-      {/* Features 03, 04, 05 */}
-      <section className="px-6 py-20">
-        <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-10">
-          <SmallFeature
-            number="03"
-            label="auto reminders"
-            title="Stop the Sunday-night group text."
-            body="One switch per student. Keepsy texts or emails them before each lesson — so you never chase again."
-          />
-          <SmallFeature
-            number="04"
-            label="billing cycles"
-            title="Know who's behind, without the spreadsheet."
-            body="Set your cycle length. Keepsy flags who's due, logs who's paid, and stays out of your way."
-          />
-          <SmallFeature
-            number="05"
-            label="monthly income"
-            title="Your month, in one number."
-            body="This month's total, any past month — ready for taxes, planning, or just a satisfying look."
-          />
-        </div>
+      {/* ─── Try-it demo ─── */}
+      <section className="px-5 pb-8 keepsy-rise keepsy-rise-4">
+        <LandingTryDemo />
       </section>
 
-      {/* Works for any subject */}
+      {/* ─── Notes are just the start ─── */}
       <section
-        className="px-6 py-20"
+        className="px-6 py-16"
         style={{ backgroundColor: "var(--bg-surface)" }}
       >
-        <div className="max-w-3xl mx-auto text-center">
-          <p className="font-label mb-4" style={{ color: "var(--ink-tertiary)" }}>
-            works for any subject
-          </p>
-          <h2
-            className="font-display text-[32px] sm:text-[40px] mb-6 leading-[1.1]"
-            style={{ color: "var(--ink-primary)", letterSpacing: "-0.02em" }}
-          >
-            Built for every<br />private lesson teacher.
-          </h2>
-          <p className="text-[16px] leading-relaxed mb-10" style={{ color: "var(--ink-secondary)" }}>
-            Piano, violin, voice, guitar, language tutoring, math, dance,
-            yoga, art, coaching &mdash; if you teach one-on-one, Keepsy
-            handles the admin so you don&apos;t have to.
-          </p>
-          <div className="flex flex-wrap justify-center gap-2 max-w-2xl mx-auto">
-            {subjects.map((s) => (
-              <span key={s} className="subject-chip">
-                {s}
-              </span>
-            ))}
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-10">
+            <p className="font-label mb-3" style={{ color: "var(--ink-tertiary)" }}>
+              more than notes
+            </p>
+            <h2
+              className="font-display text-[28px] sm:text-[34px] mb-3 leading-[1.1]"
+              style={{ color: "var(--ink-primary)", letterSpacing: "-0.02em" }}
+            >
+              Notes are just the start.
+            </h2>
+            <p
+              className="text-[15px] leading-relaxed max-w-md mx-auto"
+              style={{ color: "var(--ink-secondary)" }}
+            >
+              Keepsy also runs your scheduling, reminders, billing, and monthly income &mdash; all
+              in one place.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-2xl mx-auto">
+            <Tool label="schedule" benefit="what's next, always" icon="calendar" />
+            <Tool label="reminders" benefit="auto, per student" icon="bell" />
+            <Tool label="billing" benefit="who's due, who paid" icon="card" />
+            <Tool label="income" benefit="your month, one number" icon="chart" />
           </div>
         </div>
       </section>
 
-      {/* Bottom CTA */}
-      <section className="px-6 py-20">
-        <div className="max-w-2xl mx-auto text-center">
+      {/* ─── 3 steps ─── */}
+      <section className="px-6 py-14">
+        <div className="max-w-md mx-auto grid grid-cols-3 gap-4 text-center">
+          <Step n="01" label="talk or type a few lines" />
+          <Step n="02" label="Keepsy writes the note" />
+          <Step n="03" label="you tap send" />
+        </div>
+      </section>
+
+      {/* ─── Bottom CTA ─── */}
+      <section
+        className="px-6 py-16"
+        style={{ backgroundColor: "var(--bg-surface)", borderTop: "1px solid var(--line-subtle)" }}
+      >
+        <div className="max-w-xl mx-auto text-center">
           <h2
-            className="font-display text-[32px] sm:text-[40px] mb-5 leading-[1.1]"
+            className="font-display text-[28px] sm:text-[34px] mb-6 leading-[1.1]"
             style={{ color: "var(--ink-primary)", letterSpacing: "-0.02em" }}
           >
-            Ready to reclaim<br />your evenings?
+            Reclaim your evenings.
           </h2>
-          <p className="text-[16px] leading-relaxed mb-8" style={{ color: "var(--ink-secondary)" }}>
-            {loggedIn
-              ? "Pick up where you left off."
-              : "Create an account in under a minute. No credit card."}
+          <Link href="/login" className="btn-primary h-12 px-7 text-[15px] inline-flex items-center">
+            Create your account
+          </Link>
+          <p className="text-[12.5px] mt-4" style={{ color: "var(--ink-tertiary)" }}>
+            your first note is ninety seconds away
           </p>
-          {loggedIn ? (
-            <Link href="/today" className="btn-primary h-12 px-7 text-[15px]">
-              go to your dashboard &rarr;
-            </Link>
-          ) : (
-            <Link href="/login" className="btn-primary h-12 px-7 text-[15px]">
-              create an account
-            </Link>
-          )}
         </div>
       </section>
     </PublicShell>
   );
 }
 
-function SmallFeature({
-  number,
+function Tool({
   label,
-  title,
-  body,
+  benefit,
+  icon,
 }: {
-  number: string;
   label: string;
-  title: string;
-  body: string;
+  benefit: string;
+  icon: "calendar" | "bell" | "card" | "chart";
 }) {
   return (
-    <div>
-      <p className="font-label mb-3" style={{ color: "var(--accent)" }}>
-        {number} &middot; {label}
-      </p>
-      <h3
-        className="text-[20px] font-medium mb-3 leading-[1.3]"
-        style={{ color: "var(--ink-primary)", letterSpacing: "-0.005em" }}
+    <div
+      className="rounded-[12px] p-4 text-center"
+      style={{ backgroundColor: "var(--bg-canvas)", border: "1px solid var(--line-subtle)" }}
+    >
+      <span className="inline-flex" style={{ color: "var(--accent)" }}>
+        <ToolIcon icon={icon} />
+      </span>
+      <p
+        className="text-[13px] font-medium mt-2 mb-0.5"
+        style={{ color: "var(--ink-primary)" }}
       >
-        {title}
-      </h3>
-      <p className="text-[15px] leading-relaxed" style={{ color: "var(--ink-secondary)" }}>
-        {body}
+        {label}
+      </p>
+      <p className="text-[11.5px] leading-[1.35]" style={{ color: "var(--ink-tertiary)" }}>
+        {benefit}
+      </p>
+    </div>
+  );
+}
+
+function ToolIcon({ icon }: { icon: "calendar" | "bell" | "card" | "chart" }) {
+  const common = {
+    width: 20,
+    height: 20,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.7,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+  };
+  if (icon === "calendar")
+    return (
+      <svg {...common}>
+        <rect x="3" y="4" width="18" height="18" rx="2" />
+        <path d="M16 2v4M8 2v4M3 10h18" />
+      </svg>
+    );
+  if (icon === "bell")
+    return (
+      <svg {...common}>
+        <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+      </svg>
+    );
+  if (icon === "card")
+    return (
+      <svg {...common}>
+        <rect x="2" y="5" width="20" height="14" rx="2" />
+        <path d="M2 10h20" />
+      </svg>
+    );
+  return (
+    <svg {...common}>
+      <path d="M3 3v18h18M7 14l4-4 3 3 5-6" />
+    </svg>
+  );
+}
+
+function Step({ n, label }: { n: string; label: string }) {
+  return (
+    <div>
+      <p className="font-display text-[16px]" style={{ color: "var(--accent)" }}>
+        {n}
+      </p>
+      <p className="text-[12.5px] mt-1.5 leading-[1.45]" style={{ color: "var(--ink-secondary)" }}>
+        {label}
       </p>
     </div>
   );
